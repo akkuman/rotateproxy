@@ -13,7 +13,8 @@ var (
 )
 
 type BaseConfig struct {
-	ListenAddr string
+	ListenAddr   string
+	IPRegionFlag int // 0: all 1: cannot bypass gfw 2: bypass gfw
 }
 
 type RedirectClient struct {
@@ -56,7 +57,7 @@ func (c *RedirectClient) Serve() error {
 }
 
 func (c *RedirectClient) HandleConn(conn net.Conn) {
-	key, err := RandomProxyURL()
+	key, err := RandomProxyURL(c.config.IPRegionFlag)
 	if err != nil {
 		errConn := closeConn(conn)
 		if errConn != nil {

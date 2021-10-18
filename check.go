@@ -27,7 +27,7 @@ type IPInfo struct {
 	Query       string  `json:"query"`
 }
 
-func CheckProxyAlive(proxyURL string) bool {
+func CheckProxyAlive(proxyURL string) (respBody string, avail bool) {
 	proxy, _ := url.Parse(proxyURL)
 	httpclient := &http.Client{
 		Transport: &http.Transport{
@@ -36,19 +36,19 @@ func CheckProxyAlive(proxyURL string) bool {
 		},
 		Timeout: 20 * time.Second,
 	}
-	resp, err := httpclient.Get("https://www.baidu.com/")
+	resp, err := httpclient.Get("http://cip.cc/")
 	if err != nil {
-		return false
+		return "", false
 	}
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return false
+		return "", false
 	}
-	if !strings.Contains(string(body), "www.baidu.com") {
-		return false
+	if !strings.Contains(string(body), "地址") {
+		return "", false
 	}
-	return true
+	return string(body), true
 }
 
 func StartCheckProxyAlive() {
@@ -75,12 +75,19 @@ func checkAlive() {
 	for i := range proxies {
 		proxy := proxies[i]
 		go func() {
-			if CheckProxyAlive(proxy.URL) {
+			respBody, avail := CheckProxyAlive(proxy.URL)
+			if avail {
 				fmt.Printf("%v 可用\n", proxy.URL)
-				SetProxyURLAvail(proxy.URL)
+				SetProxyURLAvail(proxy.URL, CanBypassGFW(respBody))
 			} else {
 				AddProxyURLRetry(proxy.URL)
 			}
 		}()
 	}
+}
+
+func CanBypassGFW(respBody string) bool {
+	return strings.Contains(respBody, "香港") ||
+		strings.Contains(respBody, "台湾") ||
+		strings.Contains(respBody, "澳门") || !strings.Contains(respBody, "中国")
 }

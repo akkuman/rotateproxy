@@ -23,7 +23,7 @@ func addProxyURL(url string) {
 	CreateProxyURL(url)
 }
 
-func RunCrawler(fofaApiKey, fofaEmail, rule string) (err error) {
+func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int) (err error) {
 	req, err := http.NewRequest("GET", "https://fofa.so/api/v1/search/all", nil)
 	if err != nil {
 		return err
@@ -34,7 +34,7 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string) (err error) {
 	q.Add("key", fofaApiKey)
 	q.Add("qbase64", rule)
 	q.Add("size", "100")
-	q.Add("page", "1")
+	q.Add("page", fmt.Sprintf("%d", pageNum))
 	q.Add("fields", "host,title,ip,domain,port,country,city,server,protocol")
 	req.URL.RawQuery = q.Encode()
 	resp, err := http.DefaultClient.Do(req)
@@ -57,12 +57,16 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string) (err error) {
 	return
 }
 
-func StartRunCrawler(fofaApiKey, fofaEmail, rule string) {
+func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int) {
 	go func() {
-		RunCrawler(fofaApiKey, fofaEmail, rule)
+		for i := 1; i <= 3; i++ {
+			RunCrawler(fofaApiKey, fofaEmail, rule, i)
+		}
 		ticker := time.NewTicker(600 * time.Second)
 		for range ticker.C {
-			RunCrawler(fofaApiKey, fofaEmail, rule)
+			for i := 1; i <= 3; i++ {
+				RunCrawler(fofaApiKey, fofaEmail, rule, i)
+			}
 		}
 	}()
 }

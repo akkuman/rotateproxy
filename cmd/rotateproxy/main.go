@@ -7,10 +7,11 @@ import (
 )
 
 var (
-	baseCfg rotateproxy.BaseConfig
-	email   string
-	token   string
-	rule    string
+	baseCfg   rotateproxy.BaseConfig
+	email     string
+	token     string
+	rule      string
+	pageCount int
 )
 
 func init() {
@@ -18,6 +19,8 @@ func init() {
 	flag.StringVar(&email, "email", "", "email address")
 	flag.StringVar(&token, "token", "", "token")
 	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2021-08-01" && country="CN"`, "search rule")
+	flag.IntVar(&baseCfg.IPRegionFlag, "region", 0, "0: all 1: cannot bypass gfw 2: bypass gfw")
+	flag.IntVar(&pageCount, "page", 5, "the page count you want to crawl")
 	flag.Parse()
 }
 
@@ -37,7 +40,7 @@ func main() {
 		return
 	}
 
-	rotateproxy.StartRunCrawler(token, email, rule)
+	rotateproxy.StartRunCrawler(token, email, rule, pageCount)
 	rotateproxy.StartCheckProxyAlive()
 	c := rotateproxy.NewRedirectClient(rotateproxy.WithConfig(&baseCfg))
 	c.Serve()

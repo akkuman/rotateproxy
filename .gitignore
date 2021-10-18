@@ -2,3 +2,4 @@
 .history
 .vscode
 *.zip
+cmd/rotateproxy/db.db
