@@ -25,6 +25,7 @@ jobs:
           race: false
           ldflags: -s -w
           buildmode: default
+          pkg: cmd/rotateproxy
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
