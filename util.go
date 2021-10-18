@@ -1,6 +1,7 @@
 package rotateproxy
 
 import (
+	"fmt"
 	"math/rand"
 	"sync"
 	"time"
@@ -22,14 +23,11 @@ func RandomSyncMap(sMap sync.Map) (key, value interface{}) {
 	return element[0], element[1]
 }
 
-func SyncMapIsBlank(sMap sync.Map) bool {
-	isBlank := true
-	sMap.Range(func(key, value interface{}) bool {
-		if value.(int) == 0 {
-			isBlank = false
-			return false
-		}
-		return true
-	})
-	return isBlank
+func IsProxyURLBlank() bool {
+	proxies, err := QueryAvailProxyURL()
+	if err != nil {
+		fmt.Printf("[!] Error: %v\n", err)
+		return false
+	}
+	return len(proxies) == 0
 }

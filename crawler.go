@@ -5,12 +5,9 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 )
 
-var ProxyMap sync.Map
-var mutex sync.Mutex
 var crawlDone = make(chan struct{})
 
 type fofaAPIResponse struct {
@@ -22,12 +19,8 @@ type fofaAPIResponse struct {
 	Size    int        `json:"size"`
 }
 
-func addProxyMap(addr interface{}) {
-	mutex.Lock()
-	defer mutex.Unlock()
-	if _, ok := ProxyMap.Load(addr); !ok {
-		ProxyMap.Store(addr, maxRetry-1)
-	}
+func addProxyURL(url string) {
+	CreateProxyURL(url)
 }
 
 func RunCrawler(fofaApiKey, fofaEmail, rule string) (err error) {
@@ -58,7 +51,7 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string) (err error) {
 	fmt.Printf("get %d host\n", len(res.Results))
 	for _, value := range res.Results {
 		host := value[0]
-		addProxyMap(host)
+		addProxyURL(fmt.Sprintf("socks5://%s", host))
 	}
 	crawlDone <- struct{}{}
 	return

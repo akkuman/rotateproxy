@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"strings"
 	"time"
 )
 
@@ -40,7 +41,7 @@ func (c *RedirectClient) Serve() error {
 	if err != nil {
 		return err
 	}
-	for SyncMapIsBlank(ProxyMap) {
+	for IsProxyURLBlank() {
 		fmt.Println("[*] waiting for crawl proxy...")
 		time.Sleep(3 * time.Second)
 	}
@@ -55,8 +56,16 @@ func (c *RedirectClient) Serve() error {
 }
 
 func (c *RedirectClient) HandleConn(conn net.Conn) {
-	key, _ := RandomSyncMap(ProxyMap)
-	cc, err := net.DialTimeout("tcp", key.(string), 20*time.Second)
+	key, err := RandomProxyURL()
+	if err != nil {
+		errConn := closeConn(conn)
+		if errConn != nil {
+			fmt.Printf("[!] close connect error: %v\n", errConn)
+		}
+		return
+	}
+	key = strings.TrimPrefix(key, "socks5://")
+	cc, err := net.DialTimeout("tcp", key, 20*time.Second)
 	if err != nil {
 		fmt.Printf("[!] cannot connect to %v\n", key)
 	}

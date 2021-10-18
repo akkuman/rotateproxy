@@ -10,8 +10,6 @@ import (
 	"time"
 )
 
-var maxRetry = 3
-
 type IPInfo struct {
 	Status      string  `json:"status"`
 	Country     string  `json:"country"`
@@ -70,19 +68,19 @@ func StartCheckProxyAlive() {
 }
 
 func checkAlive() {
-	ProxyMap.Range(func(key, value interface{}) bool {
-		// check if proxy is valid, if check failed 3 times, it will not be checked again.
-		if failedCount, ok := value.(int); ok && failedCount < maxRetry {
-			go func() {
-				if CheckProxyAlive(fmt.Sprintf("socks5://%v", key)) {
-					fmt.Printf("%v 可用\n", key)
-					ProxyMap.Store(key, 0)
-					// return true
-				}
-				ProxyMap.Store(key, failedCount+1)
-			}()
-			return true
-		}
-		return true
-	})
+	proxies, err := QueryProxyURL()
+	if err != nil {
+		fmt.Printf("[!] query db error: %v\n", err)
+	}
+	for i := range proxies {
+		proxy := proxies[i]
+		go func() {
+			if CheckProxyAlive(proxy.URL) {
+				fmt.Printf("%v 可用\n", proxy.URL)
+				SetProxyURLAvail(proxy.URL)
+			} else {
+				AddProxyURLRetry(proxy.URL)
+			}
+		}()
+	}
 }
