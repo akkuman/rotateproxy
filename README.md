@@ -1,6 +1,6 @@
 # rotateproxy
 
-利用fofa搜索socks5开发代理进行代理池轮切的工具
+利用fofa搜索socks5开放代理进行代理池轮切的工具
 
 ## 帮助
 
