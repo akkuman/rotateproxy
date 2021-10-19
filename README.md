@@ -25,3 +25,9 @@ Usage of rotateproxy.exe:
 ```shell
 go get -u github.com/akkuman/rotateproxy/cmd/...
 ```
+
+或者到[发布页面](https://github.com/akkuman/rotateproxy/releases/latest)进行下载
+
+## 效果展示
+
+![](https://raw.githubusercontent.com/akkuman/pic/master/img2021/10/483743841a871c4c3207e4ed14ebbe4f.jpg)
