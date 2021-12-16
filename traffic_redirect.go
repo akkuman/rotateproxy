@@ -107,6 +107,7 @@ func transport(rw1, rw2 io.ReadWriter) error {
 	}()
 
 	err := <-errc
+	close(errc)
 	if err != nil && err == io.EOF {
 		err = nil
 	}
