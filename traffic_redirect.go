@@ -122,6 +122,6 @@ func copyBuffer(dst io.Writer, src io.Reader) (err error) {
 	}()
 	buf := make([]byte, largeBufferSize)
 
-	_, err = io.CopyBuffer(dst, src, buf)
+	_, err = CopyBufferWithCloseErr(dst, src, buf)
 	return err
 }
