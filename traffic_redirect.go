@@ -141,19 +141,13 @@ func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
 	return
 }
 
-func (c *RedirectClient) HandleConn(conn net.Conn) {
-	defer closeConn(conn)
-	// auth for local socks5 serer
-	err := c.handshakeWithDownstream(conn)
-	if err != nil {
-		fmt.Printf("socks handshake with downstream failed: %v\n", err)
-		return
-	}
+// getValidSocks5Connection 获取可用的socks5连接并完成握手阶段
+func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 	var cc net.Conn
 	for {
 		key, err := RandomProxyURL(c.config.IPRegionFlag)
 		if err != nil {
-			return
+			return nil, err
 		}
 		key = strings.TrimPrefix(key, "socks5://")
 		cc, err = net.DialTimeout("tcp", key, 20*time.Second)
@@ -174,6 +168,22 @@ func (c *RedirectClient) HandleConn(conn net.Conn) {
 			continue
 		}
 		break
+	}
+	return cc, nil
+}
+
+func (c *RedirectClient) HandleConn(conn net.Conn) {
+	defer closeConn(conn)
+	// auth for local socks5 serer
+	err := c.handshakeWithDownstream(conn)
+	if err != nil {
+		fmt.Printf("socks handshake with downstream failed: %v\n", err)
+		return
+	}
+	cc, err := c.getValidSocks5Connection()
+	if err != nil {
+		fmt.Printf("getValidSocks5Connection failed: %v\n", err)
+		return
 	}
 	defer closeConn(cc)
 	err = transport(conn, cc)
