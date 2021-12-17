@@ -30,47 +30,25 @@ type BaseConfig struct {
 	SelectStrategy int // 0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ...
 }
 
-type RedirectClient struct {
-	config *BaseConfig
+type ConnPreProcessorIface interface {
+	// 上游连接预处理
+	UpstreamPreProcess(conn net.Conn) (err error)
+	// 下游连接预处理
+	DownstreamPreProcess(conn net.Conn) (err error)
 }
 
-type RedirectClientOption func(*RedirectClient)
-
-func WithConfig(config *BaseConfig) RedirectClientOption {
-	return func(c *RedirectClient) {
-		c.config = config
-	}
+// AuthPreProcessor 带认证的socks5预处理器
+type AuthPreProcessor struct {
+	cfg BaseConfig
 }
 
-func NewRedirectClient(opts ...RedirectClientOption) *RedirectClient {
-	c := &RedirectClient{}
-	for _, opt := range opts {
-		opt(c)
-	}
-	return c
+type NoAuthPreProcessor struct {
+	cfg BaseConfig
 }
 
-func (c *RedirectClient) Serve() error {
-	l, err := net.Listen("tcp", c.config.ListenAddr)
-	if err != nil {
-		return err
-	}
-	for IsProxyURLBlank() {
-		fmt.Println("[*] waiting for crawl proxy...")
-		time.Sleep(3 * time.Second)
-	}
-	for {
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Printf("[!] accept error: %v\n", err)
-			continue
-		}
-		go c.HandleConn(conn)
-	}
-}
 
-// handshakeWithDownstream auth for socks5 server(local)
-func (c *RedirectClient) handshakeWithDownstream(conn net.Conn) (err error) {
+// DownstreamPreProcess auth for socks5 server(local)
+func (p *AuthPreProcessor) DownstreamPreProcess(conn net.Conn) (err error) {
 	buf := make([]byte, 256)
 	// read VER and NMETHODS
 	if _, err := io.ReadFull(conn, buf[:2]); err != nil {
@@ -115,7 +93,7 @@ func (c *RedirectClient) handshakeWithDownstream(conn net.Conn) (err error) {
 	passLens := int(buf[2+nameLens])
 	uPass := string(buf[2+nameLens+1 : 2+nameLens+1+passLens])
 
-	if uName != c.config.Username || uPass != c.config.Password {
+	if uName != p.cfg.Username || uPass != p.cfg.Password {
 		_, _ = conn.Write([]byte{b0, 0xff})
 		err = errors.New("authentication failed")
 		return
@@ -125,8 +103,8 @@ func (c *RedirectClient) handshakeWithDownstream(conn net.Conn) (err error) {
 	return
 }
 
-// handshakeWithUpstream no auth for remote socks5 serer
-func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
+// UpstreamPreProcess no auth for remote socks5 serer
+func (p *AuthPreProcessor) UpstreamPreProcess(conn net.Conn) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("%v", e)
@@ -151,6 +129,71 @@ func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
 	return
 }
 
+func NewAuthPreProcessor(cfg BaseConfig) *AuthPreProcessor {
+	return &AuthPreProcessor{cfg: cfg}
+}
+
+func (p *NoAuthPreProcessor) UpstreamPreProcess(conn net.Conn) (err error) {
+	return nil
+}
+
+func (p *NoAuthPreProcessor) DownstreamPreProcess(conn net.Conn) (err error) {
+	return nil
+}
+
+func NewNoAuthPreProcessor(cfg BaseConfig) *NoAuthPreProcessor {
+	return &NoAuthPreProcessor{cfg: cfg}
+}
+
+
+type RedirectClient struct {
+	config *BaseConfig
+
+	preProcessor ConnPreProcessorIface
+}
+
+type RedirectClientOption func(*RedirectClient)
+
+func WithConfig(config *BaseConfig) RedirectClientOption {
+	return func(c *RedirectClient) {
+		c.config = config
+	}
+}
+
+func NewRedirectClient(opts ...RedirectClientOption) *RedirectClient {
+	c := &RedirectClient{}
+	for _, opt := range opts {
+		opt(c)
+	}
+	if c.config != nil {
+		if c.config.Username != "" && c.config.Password != "" {
+			c.preProcessor = NewAuthPreProcessor(*c.config)
+		} else {
+			c.preProcessor = NewNoAuthPreProcessor(*c.config)
+		}
+	}
+	return c
+}
+
+func (c *RedirectClient) Serve() error {
+	l, err := net.Listen("tcp", c.config.ListenAddr)
+	if err != nil {
+		return err
+	}
+	for IsProxyURLBlank() {
+		fmt.Println("[*] waiting for crawl proxy...")
+		time.Sleep(3 * time.Second)
+	}
+	for {
+		conn, err := l.Accept()
+		if err != nil {
+			fmt.Printf("[!] accept error: %v\n", err)
+			continue
+		}
+		go c.HandleConn(conn)
+	}
+}
+
 // getValidSocks5Connection 获取可用的socks5连接并完成握手阶段
 func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 	var cc net.Conn
@@ -165,9 +208,9 @@ func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 			closeConn(cc)
 			fmt.Printf("[!] cannot connect to %v\n", key)
 		}
-		fmt.Printf("use %v\n", key)
+		fmt.Printf("[*] use %v\n", key)
 		// write header for remote socks5 server
-		err = c.handshakeWithUpstream(cc)
+		err = c.preProcessor.UpstreamPreProcess(cc)
 		if err != nil {
 			closeConn(cc)
 			if errors.Is(err, ErrNotSocks5Proxy) {
@@ -187,14 +230,14 @@ func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 func (c *RedirectClient) HandleConn(conn net.Conn) {
 	defer closeConn(conn)
 	// auth for local socks5 serer
-	err := c.handshakeWithDownstream(conn)
+	err := c.preProcessor.DownstreamPreProcess(conn)
 	if err != nil {
-		fmt.Printf("socks handshake with downstream failed: %v\n", err)
+		fmt.Printf("[!] socks handshake with downstream failed: %v\n", err)
 		return
 	}
 	cc, err := c.getValidSocks5Connection()
 	if err != nil {
-		fmt.Printf("getValidSocks5Connection failed: %v\n", err)
+		fmt.Printf("[!] getValidSocks5Connection failed: %v\n", err)
 		return
 	}
 	defer closeConn(cc)
@@ -208,7 +251,7 @@ func closeConn(conn net.Conn) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("%v", e)
-			fmt.Printf("close connection: %v\n", err)
+			fmt.Printf("[*] close connection: %v\n", err)
 		}
 	}()
 	err = conn.Close()
@@ -234,7 +277,7 @@ func transport(rw1, rw2 io.ReadWriter) error {
 func copyBuffer(dst io.Writer, src io.Reader) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
-			err = fmt.Errorf("copyBuffer: %v", e)
+			err = fmt.Errorf("[!] copyBuffer: %v", e)
 		}
 	}()
 	buf := make([]byte, largeBufferSize)
