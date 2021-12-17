@@ -16,6 +16,8 @@ var (
 
 func init() {
 	flag.StringVar(&baseCfg.ListenAddr, "l", ":8899", "listen address")
+	flag.StringVar(&baseCfg.Username, "user", "", "authentication username")
+	flag.StringVar(&baseCfg.Password, "pass", "", "authentication password")
 	flag.StringVar(&email, "email", "", "email address")
 	flag.StringVar(&token, "token", "", "token")
 	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2021-08-01" && country="CN"`, "search rule")
