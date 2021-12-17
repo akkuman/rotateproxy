@@ -2,16 +2,18 @@ package main
 
 import (
 	"flag"
-
 	"github.com/akkuman/rotateproxy"
+	"regexp"
+	"strings"
 )
 
 var (
-	baseCfg   rotateproxy.BaseConfig
-	email     string
-	token     string
-	rule      string
-	pageCount int
+	baseCfg     rotateproxy.BaseConfig
+	email       string
+	token       string
+	rule        string
+	pageCount   int
+	portPattern = regexp.MustCompile(`^\d+$`)
 )
 
 func init() {
@@ -40,6 +42,12 @@ func main() {
 	if !isFlagPassed("email") || !isFlagPassed("token") {
 		flag.Usage()
 		return
+	}
+
+	baseCfg.ListenAddr = strings.TrimSpace(baseCfg.ListenAddr)
+
+	if portPattern.Match([]byte(baseCfg.ListenAddr)) {
+		baseCfg.ListenAddr = ":" + baseCfg.ListenAddr
 	}
 
 	rotateproxy.StartRunCrawler(token, email, rule, pageCount)
