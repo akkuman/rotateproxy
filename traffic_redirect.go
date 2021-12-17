@@ -126,6 +126,15 @@ func (c *RedirectClient) handshakeWithDownstream(conn net.Conn) (err error) {
 
 // handshakeWithUpstream no auth for remote socks5 serer
 func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
+	defer func() {
+		if e := recover(); e != nil {
+			err = fmt.Errorf("%v", e)
+			fmt.Printf("close connection: %v\n", err)
+		}
+	}()
+	if conn == nil {
+		return errors.New("connection is nil")
+	}
 	_, err = conn.Write([]byte{socksVer5, 0x02, 0x00, 0x01})
 	if err != nil {
 		return errors.New("write upstream connection failed: " + err.Error())
@@ -150,7 +159,7 @@ func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 			return nil, err
 		}
 		key = strings.TrimPrefix(key, "socks5://")
-		cc, err = net.DialTimeout("tcp", key, 20*time.Second)
+		cc, err = net.DialTimeout("tcp", key, 5*time.Second)
 		if err != nil {
 			closeConn(cc)
 			fmt.Printf("[!] cannot connect to %v\n", key)
@@ -159,10 +168,10 @@ func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 		// write header for remote socks5 server
 		err = c.handshakeWithUpstream(cc)
 		if err != nil {
-			// 将该代理设置为不可用
-			markUnavail()
 			closeConn(cc)
 			if errors.Is(err, ErrNotSocks5Proxy) {
+				// 将该代理设置为不可用
+				markUnavail()
 				fmt.Println(err)
 				continue
 			}
