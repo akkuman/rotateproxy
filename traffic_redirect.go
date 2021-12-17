@@ -1,11 +1,14 @@
 package rotateproxy
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"net"
 	"strings"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 var (
@@ -97,18 +100,16 @@ func closeConn(conn net.Conn) (err error) {
 }
 
 func transport(rw1, rw2 io.ReadWriter) error {
-	errc := make(chan error, 1)
-	go func() {
-		errc <- copyBuffer(rw1, rw2)
-	}()
+	g, _ := errgroup.WithContext(context.Background())
+	g.Go(func() error{
+		return copyBuffer(rw1, rw2)
+	})
 
-	go func() {
-		errc <- copyBuffer(rw2, rw1)
-	}()
-
-	err := <-errc
-	close(errc)
-	if err != nil && err == io.EOF {
+	g.Go(func() error{
+		return copyBuffer(rw2, rw1)
+	})
+	var err error
+	if err = g.Wait(); err != nil && err == io.EOF {
 		err = nil
 	}
 	return err

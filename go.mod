@@ -3,6 +3,7 @@ module github.com/akkuman/rotateproxy
 go 1.17
 
 require (
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	gorm.io/driver/sqlite v1.1.6
 	gorm.io/gorm v1.21.16
 )
