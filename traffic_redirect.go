@@ -145,7 +145,7 @@ func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
 func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 	var cc net.Conn
 	for {
-		key, err := RandomProxyURL(c.config.IPRegionFlag)
+		key, markUnavail, err := RandomProxyURL(c.config.IPRegionFlag)
 		if err != nil {
 			return nil, err
 		}
@@ -159,6 +159,8 @@ func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 		// write header for remote socks5 server
 		err = c.handshakeWithUpstream(cc)
 		if err != nil {
+			// 将该代理设置为不可用
+			markUnavail()
 			closeConn(cc)
 			if errors.Is(err, ErrNotSocks5Proxy) {
 				fmt.Println(err)

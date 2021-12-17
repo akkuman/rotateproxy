@@ -63,12 +63,17 @@ func SetProxyURLAvail(url string, canBypassGFW bool) error {
 	return tx.Error
 }
 
+func SetProxyURLUnavail(url string) error {
+	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 0, Available: false})
+	return tx.Error
+}
+
 func AddProxyURLRetry(url string) error {
 	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Update("retry", gorm.Expr("retry + 1"))
 	return tx.Error
 }
 
-func RandomProxyURL(regionFlag int) (string, error) {
+func RandomProxyURL(regionFlag int) (pu string, markUnavail func(), err error) {
 	var proxyURL ProxyURL
 	var tx *gorm.DB
 	switch regionFlag {
@@ -79,5 +84,8 @@ func RandomProxyURL(regionFlag int) (string, error) {
 	default:
 		tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = 1 ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName())).Scan(&proxyURL)
 	}
-	return proxyURL.URL, tx.Error
+	markUnavail = func() {
+		SetProxyURLUnavail(proxyURL.URL)
+	}
+	return proxyURL.URL, markUnavail, tx.Error
 }
