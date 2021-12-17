@@ -135,7 +135,7 @@ func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
 	if err != nil {
 		return err
 	}
-	if buf[0] != socksVer5 {
+	if buf[0] != socksVer5 && int(buf[1]) != 0x00 {
 		return ErrNotSocks5Proxy
 	}
 	return
