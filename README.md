@@ -13,11 +13,16 @@ Usage of rotateproxy.exe:
         listen address (default ":8899")
   -page int
         the page count you want to crawl (default 5)
+  -pass string
+        authentication password
   -region int
         0: all 1: cannot bypass gfw 2: bypass gfw
   -rule string
-        search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2021-08-01\" && country=\"CN\"")  -token string
+        search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2021-08-01\" && country=\"CN\"")
+  -token string
         token
+  -user string
+        authentication username
 ```
 
 ## 安装
