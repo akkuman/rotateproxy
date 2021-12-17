@@ -27,7 +27,7 @@ type IPInfo struct {
 	Query       string  `json:"query"`
 }
 
-func CheckProxyAlive(proxyURL string) (respBody string, avail bool) {
+func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail bool) {
 	proxy, _ := url.Parse(proxyURL)
 	httpclient := &http.Client{
 		Transport: &http.Transport{
@@ -36,19 +36,21 @@ func CheckProxyAlive(proxyURL string) (respBody string, avail bool) {
 		},
 		Timeout: 20 * time.Second,
 	}
+	startTime := time.Now()
 	resp, err := httpclient.Get("http://cip.cc/")
 	if err != nil {
-		return "", false
+		return "", 0, false
 	}
 	defer resp.Body.Close()
+	timeout = int64(time.Since(startTime))
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "", false
+		return "", 0, false
 	}
 	if !strings.Contains(string(body), "地址") {
-		return "", false
+		return "", 0, false
 	}
-	return string(body), true
+	return string(body), timeout, true
 }
 
 func StartCheckProxyAlive() {
@@ -75,10 +77,10 @@ func checkAlive() {
 	for i := range proxies {
 		proxy := proxies[i]
 		go func() {
-			respBody, avail := CheckProxyAlive(proxy.URL)
+			respBody, timeout, avail := CheckProxyAlive(proxy.URL)
 			if avail {
 				fmt.Printf("%v 可用\n", proxy.URL)
-				SetProxyURLAvail(proxy.URL, CanBypassGFW(respBody))
+				SetProxyURLAvail(proxy.URL, timeout, CanBypassGFW(respBody))
 			} else {
 				AddProxyURLRetry(proxy.URL)
 			}

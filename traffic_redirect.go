@@ -27,6 +27,7 @@ type BaseConfig struct {
 	IPRegionFlag int // 0: all 1: cannot bypass gfw 2: bypass gfw
 	Username string
 	Password string
+	SelectStrategy int // 0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ...
 }
 
 type RedirectClient struct {
@@ -154,7 +155,7 @@ func (c *RedirectClient) handshakeWithUpstream(conn net.Conn) (err error) {
 func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 	var cc net.Conn
 	for {
-		key, markUnavail, err := RandomProxyURL(c.config.IPRegionFlag)
+		key, markUnavail, err := RandomProxyURL(c.config.IPRegionFlag, c.config.SelectStrategy)
 		if err != nil {
 			return nil, err
 		}

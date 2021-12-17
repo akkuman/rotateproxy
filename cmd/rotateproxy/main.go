@@ -2,9 +2,10 @@ package main
 
 import (
 	"flag"
-	"github.com/akkuman/rotateproxy"
 	"regexp"
 	"strings"
+
+	"github.com/akkuman/rotateproxy"
 )
 
 var (
@@ -24,6 +25,7 @@ func init() {
 	flag.StringVar(&token, "token", "", "token")
 	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2021-08-01" && country="CN"`, "search rule")
 	flag.IntVar(&baseCfg.IPRegionFlag, "region", 0, "0: all 1: cannot bypass gfw 2: bypass gfw")
+	flag.IntVar(&baseCfg.SelectStrategy, "strategy", 3, "0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ...")
 	flag.IntVar(&pageCount, "page", 5, "the page count you want to crawl")
 	flag.Parse()
 }

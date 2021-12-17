@@ -16,6 +16,7 @@ type ProxyURL struct {
 	Retry        int    `gorm:"column:retry"`
 	Available    bool   `gorm:"column:available"`
 	CanBypassGFW bool   `gorm:"column:can_bypass_gfw"`
+	Timeout      int64  `gorm:"column:timeout;default:0"`
 }
 
 func (ProxyURL) TableName() string {
@@ -58,8 +59,13 @@ func QueryProxyURL() (proxyURLs []ProxyURL, err error) {
 	return
 }
 
-func SetProxyURLAvail(url string, canBypassGFW bool) error {
-	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 0, Available: true, CanBypassGFW: canBypassGFW})
+func SetProxyURLAvail(url string, timeout int64, canBypassGFW bool) error {
+	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{
+		Retry: 0,
+		Available: true,
+		CanBypassGFW: canBypassGFW,
+		Timeout: timeout,
+	})
 	return tx.Error
 }
 
@@ -73,19 +79,32 @@ func AddProxyURLRetry(url string) error {
 	return tx.Error
 }
 
-func RandomProxyURL(regionFlag int) (pu string, markUnavail func(), err error) {
+func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, markUnavail func(), err error) {
 	var proxyURL ProxyURL
 	var tx *gorm.DB
-	switch regionFlag {
-	case 1:
-		tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, false).Scan(&proxyURL)
-	case 2:
-		tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, true).Scan(&proxyURL)
-	default:
-		tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = 1 ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName())).Scan(&proxyURL)
+	if strategyFlag == 0 {
+		switch regionFlag {
+		case 1:
+			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, false).Scan(&proxyURL)
+		case 2:
+			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, true).Scan(&proxyURL)
+		default:
+			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = 1 ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName())).Scan(&proxyURL)
+		}
+	} else {
+		switch regionFlag {
+		case 1:
+			tx = DB.Raw(fmt.Sprintf("SELECT * FROM (SELECT * FROM %s WHERE available = 1 AND can_bypass_gfw = ? AND timeout <> 0 ORDER BY timeout LIMIT ?) TA ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), false, strategyFlag).Scan(&proxyURL)
+		case 2:
+			tx = DB.Raw(fmt.Sprintf("SELECT * FROM (SELECT * FROM %s WHERE available = 1 AND can_bypass_gfw = ? AND timeout <> 0 ORDER BY timeout LIMIT ?) TA ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, strategyFlag).Scan(&proxyURL)
+		default:
+			tx = DB.Raw(fmt.Sprintf("SELECT * FROM (SELECT * FROM %s WHERE available = 1 AND timeout <> 0 ORDER BY timeout LIMIT ?) TA ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), strategyFlag).Scan(&proxyURL)
+		}
 	}
+	pu = proxyURL.URL
+	err = tx.Error
 	markUnavail = func() {
 		SetProxyURLUnavail(proxyURL.URL)
 	}
-	return proxyURL.URL, markUnavail, tx.Error
+	return
 }
