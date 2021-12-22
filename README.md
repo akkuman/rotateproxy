@@ -38,6 +38,29 @@ go get -u github.com/akkuman/rotateproxy/cmd/...
 
 或者到[发布页面](https://github.com/akkuman/rotateproxy/releases/latest)进行下载
 
+### 安装为linux服务（感谢 @Rvn0xsy 提供 [PR](https://github.com/akkuman/rotateproxy/pull/4)）
+
+1. 下载服务文件
+
+```bash
+curl -o /usr/lib/systemd/system/rotateproxy.service https://raw.githubusercontent.com/akkuman/rotateproxy/master/rotateproxy.service.example
+```
+
+2. 查看 [rotateproxy.service.example](./rotateproxy.service.example) 文件示例，将 `/usr/lib/systemd/system/rotateproxy.service` 文件中的 `ExecStart` 的命令替换为你自己的命令
+3. 启动服务
+
+```bash
+# 开启服务
+service rotateproxy start
+# 关闭服务
+service rotateproxy stop
+# 重启服务
+service rotateproxy restart
+# 设置开机自启动
+systemctl enable rotateproxy.service
+```
+
+
 ## 效果展示
 
 ![](./pics/curl-run.jpg)
