@@ -58,15 +58,19 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int) (err error) {
 }
 
 func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int) {
-	go func() {
+	runCrawlerFunc := func() {
 		for i := 1; i <= 3; i++ {
-			RunCrawler(fofaApiKey, fofaEmail, rule, i)
+			err := RunCrawler(fofaApiKey, fofaEmail, rule, i)
+			if err != nil {
+				fmt.Printf("[!] error: %v\n", err)
+			}
 		}
+	}
+	go func() {
+		runCrawlerFunc()
 		ticker := time.NewTicker(600 * time.Second)
 		for range ticker.C {
-			for i := 1; i <= 3; i++ {
-				RunCrawler(fofaApiKey, fofaEmail, rule, i)
-			}
+			runCrawlerFunc()
 		}
 	}()
 }
