@@ -49,6 +49,7 @@ chmod +x ./rotateproxy
 
 ```shell
 curl -L -o /usr/local/bin/rotateproxy 'https://github.com/akkuman/rotateproxy/releases/latest/download/rotateproxy-linux-amd64'
+chmod +x /usr/local/bin/rotateproxy
 curl -L -o /usr/lib/systemd/system/rotateproxy.service 'https://raw.githubusercontent.com/akkuman/rotateproxy/master/rotateproxy.service.example'
 ```
 
