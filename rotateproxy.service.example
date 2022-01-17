@@ -4,7 +4,7 @@ Documentation=rotateproxy - get socks5 from fofa
 After=network.target auditd.service
 
 [Service]
-ExecStart=/usr/local/bin/rotateproxy -l :5555 -user rotateproxy -pass rotateproxy -token ... -email 0x727team@gmail.com
+ExecStart=/usr/local/bin/rotateproxy -l :5555 -user rotateproxy -pass rotateproxy -token ... -email '0x727team@gmail.com'
 Restart=on-failure
 
 [Install]
