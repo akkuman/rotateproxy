@@ -24,7 +24,7 @@ jobs:
           v: true
           x: false
           race: false
-          ldflags: -s -w
+          ldflags: -linkmode=external -extldflags=-static -s -w
           buildmode: default
           pkg: cmd/rotateproxy
       -
