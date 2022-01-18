@@ -33,6 +33,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 		Transport: &http.Transport{
 			Proxy:           http.ProxyURL(proxy),
 			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+			DisableKeepAlives: true,
 		},
 		Timeout: 20 * time.Second,
 	}
