@@ -23,9 +23,13 @@ jobs:
       - name: Build RotateProxy
         run: |
           mkdir -p "$HOME/.bin"
-          echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc $@' > "$HOME/.bin/zcc" && chmod +x "$HOME/.bin/zcc"
-          echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ $@' > "$HOME/.bin/zxx" && chmod +x "$HOME/.bin/zxx"
+          echo '#!/bin/sh' > "$HOME/.bin/zcc"
+          echo '#!/bin/sh' > "$HOME/.bin/zxx"
+          echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc $@' >> "$HOME/.bin/zcc"
+          echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ $@' >> "$HOME/.bin/zxx"
+          chmod +x "$HOME/.bin/zcc" && chmod +x "$HOME/.bin/zxx"
           export PATH=$PATH:"$HOME/.bin"
+
           mkdir -p build
           cd cmd/rotateproxy
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zcc -target x86_64-linux-musl" CXX="zxx -target x86_64-linux-musl" go build -o '../../build/rotateproxy-linux-amd64' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
