@@ -32,6 +32,7 @@ jobs:
           configs=('linux amd64 x86_64-linux-musl' 'linux 386 i386-linux-musl' 'windows amd64 x86_64-windows-gnu' 'windows 386 i386-windows-gnu' 'darwin amd64 x86_64-macos-gnu')
           for i in ${configs[@]}
           do
+            echo "$i"
             config=($i)
             goos=${config[0]}
             goarch=${config[1]}
