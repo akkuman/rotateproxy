@@ -33,9 +33,9 @@ jobs:
           for i in ${configs[@]}
           do
             config=($i)
-            goos=(${config[0]})
-            goarch=(${config[1]})
-            libc=(${config[2]})
+            goos=${config[0]}
+            goarch=${config[1]}
+            libc=${config[2]}
             ext=''
             if [ "${goos}" = "windows" ];then
               ext='.exe'
