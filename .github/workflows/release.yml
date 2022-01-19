@@ -12,21 +12,18 @@ jobs:
       -
         name: Checkout
         uses: actions/checkout@v2
-      -
-        name: Build with xgo
-        uses: crazy-max/ghaction-xgo@v1
-        with:
-          xgo_version: latest
-          go_version: latest
-          dest: build
-          prefix: rotateproxy
-          targets: windows/386,windows/amd64,linux/386,linux/amd64,darwin/386,darwin/amd64
-          v: true
-          x: false
-          race: false
-          ldflags: -s -w
-          buildmode: default
-          pkg: cmd/rotateproxy
+      - name: Setup Zig
+        uses: goto-bus-stop/setup-zig@v1
+      - name: Setup Golang
+        uses: uses: actions/setup-go@v2
+      - run: |
+        mkdir -p build
+        cd cmd/rotateproxy
+        CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zig cc -target x86_64-linux-musl" CXX="zig c++ -target x86_64-linux-musl" go build -o '../../build/rotateproxy-linux-amd64' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+        CGO_ENABLED=1 GOOS=linux GOARCH=386 CC="zig cc -target i386-linux-musl" CXX="zig c++ -target i386-linux-musl" go build -o '../../build/rotateproxy-linux-i386' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+        CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zig cc -target x86_64-windows-gnu" CXX="zig c++ -target x86_64-windows-gnu" go build -o '../../build/rotateproxy-windows-amd64.exe' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+        CGO_ENABLED=1 GOOS=windows GOARCH=386 CC="zig cc -target i386-windows-gnu" CXX="zig c++ -target i386-windows-gnu" go build -o '../../build/rotateproxy-windows-i386.exe' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+        CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC="zig cc -target x86_64-macos-gnu" CXX="zig c++ -target x86_64-macos-gnu" go build -o '../../build/rotateproxy-darwin-amd64' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
