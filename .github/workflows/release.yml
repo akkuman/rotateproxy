@@ -23,20 +23,28 @@ jobs:
       - name: Build RotateProxy
         run: |
           mkdir -p "$HOME/.bin"
-          echo '#!/bin/sh' > "$HOME/.bin/zcc"
-          echo '#!/bin/sh' > "$HOME/.bin/zxx"
-          echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc $@' >> "$HOME/.bin/zcc"
-          echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ $@' >> "$HOME/.bin/zxx"
-          chmod +x "$HOME/.bin/zcc" && chmod +x "$HOME/.bin/zxx"
           export PATH=$PATH:"$HOME/.bin"
-
+          touch "$HOME/.bin/zcc" && touch "$HOME/.bin/zxx"
+          chmod +x "$HOME/.bin/zcc" && chmod +x "$HOME/.bin/zxx"
           mkdir -p build
           cd cmd/rotateproxy
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zcc -target x86_64-linux-musl" CXX="zxx -target x86_64-linux-musl" go build -o '../../build/rotateproxy-linux-amd64' -trimpath -ldflags="-s -w"
-          CGO_ENABLED=1 GOOS=linux GOARCH=386 CC="zcc -target i386-linux-musl" CXX="zxx -target i386-linux-musl" go build -o '../../build/rotateproxy-linux-i386' -trimpath -ldflags="-s -w"
-          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zcc -target x86_64-windows-gnu" CXX="zxx -target x86_64-windows-gnu" go build -o '../../build/rotateproxy-windows-amd64.exe' -trimpath -ldflags="-s -w"
-          CGO_ENABLED=1 GOOS=windows GOARCH=386 CC="zcc -target i386-windows-gnu" CXX="zxx -target i386-windows-gnu" go build -o '../../build/rotateproxy-windows-i386.exe' -trimpath -ldflags="-s -w"
-          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC="zcc -target x86_64-macos-gnu" CXX="zxx -target x86_64-macos-gnu" go build -o '../../build/rotateproxy-darwin-amd64' -trimpath -ldflags="-s -w"
+
+          configs=('linux amd64 x86_64-linux-musl' 'linux 386 i386-linux-musl' 'windows amd64 x86_64-windows-gnu' 'windows 386 i386-windows-gnu' 'darwin amd64 x86_64-macos-gnu')
+          for config in ${configs[@]}
+          do
+            goos=(${configs[0]})
+            goarch=(${configs[1]})
+            libc=(${configs[2]})
+            ext=''
+            if [ "${goos}" = "windows" ];then
+              ext='.exe'
+            fi
+            echo '#!/bin/sh' > "$HOME/.bin/zcc"
+            echo '#!/bin/sh' > "$HOME/.bin/zxx"
+            echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' $@' >> "$HOME/.bin/zcc"
+            echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ '${libc}' $@' >> "$HOME/.bin/zxx"
+            CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+          done
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
