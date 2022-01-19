@@ -39,6 +39,7 @@ jobs:
             if [ "${goos}" = "windows" ];then
               ext='.exe'
             fi
+            echo "goos: ${goos}  goarch: ${goarch}  libc: ${libc}"
             echo '#!/bin/sh' > "$HOME/.bin/zcc"
             echo '#!/bin/sh' > "$HOME/.bin/zxx"
             echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' $@' >> "$HOME/.bin/zcc"
