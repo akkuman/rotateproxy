@@ -32,11 +32,11 @@ jobs:
 
           mkdir -p build
           cd cmd/rotateproxy
-          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zcc -target x86_64-linux-musl" CXX="zxx -target x86_64-linux-musl" go build -o '../../build/rotateproxy-linux-amd64' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
-          CGO_ENABLED=1 GOOS=linux GOARCH=386 CC="zcc -target i386-linux-musl" CXX="zxx -target i386-linux-musl" go build -o '../../build/rotateproxy-linux-i386' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
-          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zcc -target x86_64-windows-gnu" CXX="zxx -target x86_64-windows-gnu" go build -o '../../build/rotateproxy-windows-amd64.exe' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
-          CGO_ENABLED=1 GOOS=windows GOARCH=386 CC="zcc -target i386-windows-gnu" CXX="zxx -target i386-windows-gnu" go build -o '../../build/rotateproxy-windows-i386.exe' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
-          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC="zcc -target x86_64-macos-gnu" CXX="zxx -target x86_64-macos-gnu" go build -o '../../build/rotateproxy-darwin-amd64' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+          CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zcc -target x86_64-linux-musl" CXX="zxx -target x86_64-linux-musl" go build -o '../../build/rotateproxy-linux-amd64' -trimpath -ldflags="-s -w"
+          CGO_ENABLED=1 GOOS=linux GOARCH=386 CC="zcc -target i386-linux-musl" CXX="zxx -target i386-linux-musl" go build -o '../../build/rotateproxy-linux-i386' -trimpath -ldflags="-s -w"
+          CGO_ENABLED=1 GOOS=windows GOARCH=amd64 CC="zcc -target x86_64-windows-gnu" CXX="zxx -target x86_64-windows-gnu" go build -o '../../build/rotateproxy-windows-amd64.exe' -trimpath -ldflags="-s -w"
+          CGO_ENABLED=1 GOOS=windows GOARCH=386 CC="zcc -target i386-windows-gnu" CXX="zxx -target i386-windows-gnu" go build -o '../../build/rotateproxy-windows-i386.exe' -trimpath -ldflags="-s -w"
+          CGO_ENABLED=1 GOOS=darwin GOARCH=amd64 CC="zcc -target x86_64-macos-gnu" CXX="zxx -target x86_64-macos-gnu" go build -o '../../build/rotateproxy-darwin-amd64' -trimpath -ldflags="-s -w"
       -
         name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
