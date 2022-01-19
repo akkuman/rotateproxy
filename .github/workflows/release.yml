@@ -15,7 +15,7 @@ jobs:
       - name: Setup Zig
         uses: goto-bus-stop/setup-zig@v1
       - name: Setup Golang
-        uses: uses: actions/setup-go@v2
+        uses: actions/setup-go@v2
       - run: |
         mkdir -p build
         cd cmd/rotateproxy
