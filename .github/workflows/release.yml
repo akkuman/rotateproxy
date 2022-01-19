@@ -32,9 +32,9 @@ jobs:
           configs=('linux amd64 x86_64-linux-musl' 'linux 386 i386-linux-musl' 'windows amd64 x86_64-windows-gnu' 'windows 386 i386-windows-gnu' 'darwin amd64 x86_64-macos-gnu')
           for config in ${configs[@]}
           do
-            goos=(${configs[0]})
-            goarch=(${configs[1]})
-            libc=(${configs[2]})
+            goos=(${config[0]})
+            goarch=(${config[1]})
+            libc=(${config[2]})
             ext=''
             if [ "${goos}" = "windows" ];then
               ext='.exe'
