@@ -6,7 +6,7 @@ on:
       - '*'
 
 jobs:
-  xgo:
+  build-rotateproxy:
     runs-on: ubuntu-18.04
     steps:
       -
@@ -24,6 +24,7 @@ jobs:
         run: |
           echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc' > /usr/bin/zcc && chmod +x /usr/bin/zcc
           echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++' > /usr/bin/zxx && chmod +x /usr/bin/zxx
+          export PATH=$PATH:/usr/bin/
           mkdir -p build
           cd cmd/rotateproxy
           CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC="zcc -target x86_64-linux-musl" CXX="zxx -target x86_64-linux-musl" go build -o '../../build/rotateproxy-linux-amd64' -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
