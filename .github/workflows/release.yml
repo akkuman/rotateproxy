@@ -21,6 +21,9 @@ jobs:
           go-version: 1.17
       - name: Build RotateProxy
         run: |
+          # download macos sysroot
+          git clone --depth=1 https://github.com/hexops/sdk-macos-12.0.git "$HOME/macos-SDK"
+          # create zig script
           mkdir -p "$HOME/.bin"
           export PATH=$PATH:"$HOME/.bin"
           touch "$HOME/.bin/zcc" && touch "$HOME/.bin/zxx"
@@ -33,6 +36,7 @@ jobs:
             'linux 386 i386-linux-musl'
             'windows amd64 x86_64-windows-gnu'
             'windows 386 i386-windows-gnu'
+            'macos amd64 x86_64-macos-gnu'
           )
           IFS=$'\n'
           for i in ${configs[@]}
@@ -50,24 +54,15 @@ jobs:
             echo "goos: ${goos}  goarch: ${goarch}  libc: ${libc}"
             echo '#!/bin/sh' > "$HOME/.bin/zcc"
             echo '#!/bin/sh' > "$HOME/.bin/zxx"
-            echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' $@' >> "$HOME/.bin/zcc"
-            echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' $@' >> "$HOME/.bin/zxx"
+            if [ "${goos}" = "macos" ];then
+              echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' --sysroot="$HOME/macos-SDK" -I/usr/include -L/usr/lib -F/System/Library/Frameworks $@' >> "$HOME/.bin/zcc"
+              echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' --sysroot="$HOME/macos-SDK" -I/usr/include -L/usr/lib -F/System/Library/Frameworks $@' >> "$HOME/.bin/zxx"
+            else
+              echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' $@' >> "$HOME/.bin/zcc"
+              echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' $@' >> "$HOME/.bin/zxx"
+            fi
             CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
           done
-      - name: Build with xgo
-        uses: crazy-max/ghaction-xgo@v1
-        with:
-          xgo_version: latest
-          go_version: latest
-          dest: build
-          prefix: rotateproxy
-          targets: darwin/386,darwin/amd64
-          v: true
-          x: false
-          race: false
-          ldflags: -s -w
-          buildmode: default
-          pkg: cmd/rotateproxy
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
