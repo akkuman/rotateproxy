@@ -36,7 +36,7 @@ jobs:
             'linux 386 i386-linux-musl'
             'windows amd64 x86_64-windows-gnu'
             'windows 386 i386-windows-gnu'
-            'macos amd64 x86_64-macos-gnu'
+            'darwin amd64 x86_64-macos-gnu'
           )
           IFS=$'\n'
           for i in ${configs[@]}
