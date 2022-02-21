@@ -54,6 +54,9 @@ jobs:
             echo "goos: ${goos}  goarch: ${goarch}  libc: ${libc}"
             echo '#!/bin/sh' > "$HOME/.bin/zcc"
             echo '#!/bin/sh' > "$HOME/.bin/zxx"
+            # ref: https://github.com/ziglang/zig/issues/10660
+            # ref: https://github.com/ziglang/zig/issues/1349
+            # ref: https://github.com/ziglang/zig/issues/10299#issuecomment-989153750
             if [ "${goos}" = "darwin" ];then
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' --sysroot="$HOME/macos-SDK" -I/usr/include -L/usr/lib -F/System/Library/Frameworks $@' >> "$HOME/.bin/zcc"
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' --sysroot="$HOME/macos-SDK" -I/usr/include -L/usr/lib -F/System/Library/Frameworks $@' >> "$HOME/.bin/zxx"
