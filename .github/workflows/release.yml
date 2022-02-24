@@ -32,10 +32,6 @@ jobs:
           cd cmd/rotateproxy
 
           configs=(
-            'linux amd64 x86_64-linux-musl'
-            'linux 386 i386-linux-musl'
-            'windows amd64 x86_64-windows-gnu'
-            'windows 386 i386-windows-gnu'
             'darwin amd64 x86_64-macos-gnu'
           )
           IFS=$'\n'
@@ -64,6 +60,8 @@ jobs:
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' $@' >> "$HOME/.bin/zcc"
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' $@' >> "$HOME/.bin/zxx"
             fi
+            cat "$HOME/.bin/zxx"
+            cat "$HOME/.bin/zcc"
             CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
           done
       - name: Run GoReleaser
