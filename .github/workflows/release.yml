@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-rotateproxy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-20.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -22,7 +22,7 @@ jobs:
       - name: Build RotateProxy
         run: |
           # download macos sysroot
-          git clone --depth=1 https://github.com/hexops/sdk-macos-11.3.git "$HOME/macos-SDK"
+          git clone --depth=1 https://github.com/hexops/sdk-macos-12.0.git "$HOME/macos-SDK"
           # create zig script
           mkdir -p "$HOME/.bin"
           export PATH=$PATH:"$HOME/.bin"
@@ -62,7 +62,7 @@ jobs:
             fi
             cat "$HOME/.bin/zxx"
             cat "$HOME/.bin/zcc"
-            CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+            CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -x -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
           done
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
