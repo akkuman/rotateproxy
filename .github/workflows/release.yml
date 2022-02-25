@@ -7,7 +7,7 @@ on:
 
 jobs:
   build-rotateproxy:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-18.04
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -32,6 +32,10 @@ jobs:
           cd cmd/rotateproxy
 
           configs=(
+            'linux amd64 x86_64-linux-musl'
+            'linux 386 i386-linux-musl'
+            'windows amd64 x86_64-windows-gnu'
+            'windows 386 i386-windows-gnu'
             'darwin amd64 x86_64-macos-gnu'
           )
           IFS=$'\n'
@@ -56,6 +60,9 @@ jobs:
             if [ "${goos}" = "darwin" ];then
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' --sysroot="$HOME/macos-SDK/root" -I"$HOME/macos-SDK/root/usr/include" -L"$HOME/macos-SDK/root/usr/lib" -F"$HOME/macos-SDK/root/System/Library/Frameworks" $@' >> "$HOME/.bin/zcc"
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' --sysroot="$HOME/macos-SDK/root" -I"$HOME/macos-SDK/root/usr/include" -L"$HOME/macos-SDK/root/usr/lib" -F"$HOME/macos-SDK/root/System/Library/Frameworks" $@' >> "$HOME/.bin/zxx"
+              # zig cc 调用clang，clang更新后默认加了一些参数，见 https://github.com/golang/go/issues/38876 https://stackoverflow.com/questions/42074035
+              # 经过测试最基本需要 -Wno-nullability-completeness -Wno-expansion-to-defined -Wno-availability
+              export CGO_CPPFLAGS="-Wno-error -Wno-nullability-completeness -Wno-expansion-to-defined -Wno-builtin-requires-header -Wno-availability"
             else
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig cc -target '${libc}' $@' >> "$HOME/.bin/zcc"
               echo 'ZIG_LOCAL_CACHE_DIR="$HOME/tmp" zig c++ -target '${libc}' $@' >> "$HOME/.bin/zxx"
