@@ -62,7 +62,7 @@ jobs:
             fi
             cat "$HOME/.bin/zxx"
             cat "$HOME/.bin/zcc"
-            CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -x -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
+            CGO_ENABLED=1 GOOS="${goos}" GOARCH="${goarch}" CC="zcc" CXX="zxx" go build -o "../../build/rotateproxy-${goos}-${goarch}${ext}" -trimpath -ldflags="-linkmode=external -extldflags=-static -s -w"
           done
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
