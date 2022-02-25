@@ -24,7 +24,7 @@ func addProxyURL(url string) {
 }
 
 func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int) (err error) {
-	req, err := http.NewRequest("GET", "https://fofa.so/api/v1/search/all", nil)
+	req, err := http.NewRequest("GET", "https://fofa.info/api/v1/search/all", nil)
 	if err != nil {
 		return err
 	}
