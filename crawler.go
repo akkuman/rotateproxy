@@ -1,10 +1,12 @@
 package rotateproxy
 
 import (
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"net/url"
 	"time"
 )
 
@@ -23,10 +25,19 @@ func addProxyURL(url string) {
 	CreateProxyURL(url)
 }
 
-func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int) (err error) {
+func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int, proxy string) (err error) {
 	req, err := http.NewRequest("GET", "https://fofa.info/api/v1/search/all", nil)
 	if err != nil {
 		return err
+	}
+	tr := &http.Transport{TLSClientConfig: &tls.Config{
+		InsecureSkipVerify: true,
+	}}
+	if proxy != "" {
+		proxyUrl, err := url.Parse(proxy)
+		if err == nil { // 使用传入代理
+			tr.Proxy = http.ProxyURL(proxyUrl)
+		}
 	}
 	rule = base64.StdEncoding.EncodeToString([]byte(rule))
 	q := req.URL.Query()
@@ -37,7 +48,8 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int) (err error) {
 	q.Add("page", fmt.Sprintf("%d", pageNum))
 	q.Add("fields", "host,title,ip,domain,port,country,city,server,protocol")
 	req.URL.RawQuery = q.Encode()
-	resp, err := http.DefaultClient.Do(req)
+	// resp, err := http.DefaultClient.Do(req)
+	resp, err := (&http.Client{Transport: tr}).Do(req)
 	if err != nil {
 		return err
 	}
@@ -57,10 +69,10 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int) (err error) {
 	return
 }
 
-func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int) {
+func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int, proxy string) {
 	runCrawlerFunc := func() {
 		for i := 1; i <= 3; i++ {
-			err := RunCrawler(fofaApiKey, fofaEmail, rule, i)
+			err := RunCrawler(fofaApiKey, fofaEmail, rule, i, proxy)
 			if err != nil {
 				fmt.Printf("[!] error: %v\n", err)
 			}

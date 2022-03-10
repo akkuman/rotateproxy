@@ -14,6 +14,7 @@ var (
 	token       string
 	rule        string
 	pageCount   int
+	proxy       string
 	portPattern = regexp.MustCompile(`^\d+$`)
 )
 
@@ -23,7 +24,8 @@ func init() {
 	flag.StringVar(&baseCfg.Password, "pass", "", "authentication password")
 	flag.StringVar(&email, "email", "", "email address")
 	flag.StringVar(&token, "token", "", "token")
-	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2021-08-01" && country="CN"`, "search rule")
+	flag.StringVar(&proxy, "proxy", "", "proxy")
+	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2022-02-01" && country="CN"`, "search rule")
 	flag.IntVar(&baseCfg.IPRegionFlag, "region", 0, "0: all 1: cannot bypass gfw 2: bypass gfw")
 	flag.IntVar(&baseCfg.SelectStrategy, "strategy", 3, "0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ...")
 	flag.IntVar(&pageCount, "page", 5, "the page count you want to crawl")
@@ -52,7 +54,7 @@ func main() {
 		baseCfg.ListenAddr = ":" + baseCfg.ListenAddr
 	}
 
-	rotateproxy.StartRunCrawler(token, email, rule, pageCount)
+	rotateproxy.StartRunCrawler(token, email, rule, pageCount, proxy)
 	rotateproxy.StartCheckProxyAlive()
 	c := rotateproxy.NewRedirectClient(rotateproxy.WithConfig(&baseCfg))
 	c.Serve()
