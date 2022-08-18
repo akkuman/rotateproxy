@@ -87,6 +87,7 @@ func CopyBufferWithCloseErr(dst io.Writer, src io.Reader, buf []byte) (written i
 			// if er != io.EOF {
 			// 	err = er
 			// }
+			err = er
 			break
 		}
 	}
