@@ -67,7 +67,20 @@ service rotateproxy restart
 systemctl enable rotateproxy.service
 ```
 
+4. 使用
+
+```bash
+https_proxy=socks5://{ip}:{port} curl https://example.com
+```
 
 ## 效果展示
 
 ![](./pics/curl-run.jpg)
+
+## mac 交叉编译
+
+```bash
+brew install FiloSottile/musl-cross/musl-cross
+cd cmd/rotateproxy
+CC=x86_64-linux-musl-gcc CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags "-linkmode external -extldflags -static"
+```
