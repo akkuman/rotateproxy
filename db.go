@@ -2,6 +2,7 @@ package rotateproxy
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -31,6 +32,12 @@ func checkErr(err error) {
 
 func init() {
 	var err error
+	// 启动前删除缓存数据库
+	if err = os.Remove("db.db"); err != nil {
+		if !os.IsNotExist(err) {
+			panic(err)
+		}
+	}
 	DB, err = gorm.Open(sqlite.Open("db.db"), &gorm.Config{
 		Logger: logger.Discard,
 	})
