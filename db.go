@@ -3,7 +3,7 @@ package rotateproxy
 import (
 	"fmt"
 
-	"gorm.io/driver/sqlite"
+	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
 )
@@ -61,10 +61,10 @@ func QueryProxyURL() (proxyURLs []ProxyURL, err error) {
 
 func SetProxyURLAvail(url string, timeout int64, canBypassGFW bool) error {
 	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{
-		Retry: 0,
-		Available: true,
+		Retry:        0,
+		Available:    true,
 		CanBypassGFW: canBypassGFW,
-		Timeout: timeout,
+		Timeout:      timeout,
 	})
 	return tx.Error
 }
