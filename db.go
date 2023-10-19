@@ -42,7 +42,15 @@ func init() {
 		Logger: logger.Discard,
 	})
 	checkErr(err)
+
+	// According to https://github.com/mattn/go-sqlite3/issues/274#issuecomment-191597862,
+	// solve "database is locked" error using `db.SetMaxOpenConns(1)`
+	sqlDB, err := DB.DB()
+	checkErr(err)
+	sqlDB.SetMaxOpenConns(1)
+
 	DB.AutoMigrate(&ProxyURL{})
+
 }
 
 func CreateProxyURL(url string) error {
@@ -93,6 +101,7 @@ func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, markUnavail fu
 		switch regionFlag {
 		case 1:
 			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, false).Scan(&proxyURL)
+
 		case 2:
 			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, true).Scan(&proxyURL)
 		default:
