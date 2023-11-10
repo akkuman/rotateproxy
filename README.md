@@ -10,8 +10,12 @@
 ## 帮助
 
 ```shell
-> .\rotateproxy.exe -h
+.\rotateproxy.exe -h
 Usage of rotateproxy.exe:
+  -check string
+        check url (default "https://www.google.com")
+  -checkWords string
+        words in check url (default "Copyright The Closure Library Authors")
   -email string
         email address
   -l string
@@ -20,10 +24,14 @@ Usage of rotateproxy.exe:
         the page count you want to crawl (default 5)
   -pass string
         authentication password
+  -proxy string
+        proxy
   -region int
         0: all 1: cannot bypass gfw 2: bypass gfw
   -rule string
-        search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2021-08-01\" && country=\"CN\"")
+        search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2022-02-01\" && country=\"CN\"")
+  -strategy int
+        0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ... (default 3)
   -token string
         token
   -user string
