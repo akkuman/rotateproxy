@@ -86,6 +86,7 @@ func SetProxyURLAvail(url string, timeout int64, canBypassGFW bool) error {
 
 func SetProxyURLUnavail(url string) error {
 	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 0, Available: false})
+	ErrorLog(Notice("Mark %v Unavailble! ", url))
 	return tx.Error
 }
 

@@ -60,6 +60,9 @@ func main() {
 		return
 	}
 
+	// print fofa query
+	rotateproxy.InfoLog(rotateproxy.Notice("You fofa query for rotateproxy is : %v", rule))
+
 	baseCfg.ListenAddr = strings.TrimSpace(baseCfg.ListenAddr)
 
 	if portPattern.Match([]byte(baseCfg.ListenAddr)) {

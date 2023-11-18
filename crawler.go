@@ -53,14 +53,14 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int, proxy string) (
 	if err != nil {
 		return err
 	}
-	fmt.Printf("start to parse proxy url from response\n")
+	InfoLog(Noticeln("start to parse proxy url from response"))
 	defer resp.Body.Close()
 	var res fofaAPIResponse
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("get %d host\n", len(res.Results))
+	InfoLog(Notice("get %d host", len(res.Results)))
 	for _, value := range res.Results {
 		host := value[0]
 		addProxyURL(fmt.Sprintf("socks5://%s", host))
@@ -74,7 +74,7 @@ func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int, proxy st
 		for i := 1; i <= 3; i++ {
 			err := RunCrawler(fofaApiKey, fofaEmail, rule, i, proxy)
 			if err != nil {
-				fmt.Printf("[!] error: %v\n", err)
+				ErrorLog(Warn("[!] error: %v", err))
 			}
 		}
 	}

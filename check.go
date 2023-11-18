@@ -2,7 +2,6 @@ package rotateproxy
 
 import (
 	"crypto/tls"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -35,7 +34,8 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 			DisableKeepAlives: true,
 		},
-		Timeout: 20 * time.Second,
+		// shorter timeout for better proxies
+		Timeout: 5 * time.Second,
 	}
 	startTime := time.Now()
 
@@ -58,7 +58,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 }
 
 func CheckProxyWithCheckURL(proxyURL string, checkURL string, checkURLwords string) (timeout int64, avail bool) {
-	fmt.Printf("check %s： %s\n", proxyURL, checkURL)
+	// InfoLog(Notice("check %s： %s", proxyURL, checkURL))
 	proxy, _ := url.Parse(proxyURL)
 	httpclient := &http.Client{
 		Transport: &http.Transport{
@@ -99,9 +99,9 @@ func StartCheckProxyAlive(checkURL string, checkURLwords string) {
 		for {
 			select {
 			case <-crawlDone:
-				fmt.Println("Checking")
+				InfoLog(Noticeln("Checkings"))
 				checkAlive(checkURL, checkURLwords)
-				fmt.Println("Check done")
+				InfoLog(Noticeln("Check done"))
 			case <-ticker.C:
 				checkAlive(checkURL, checkURLwords)
 			}
@@ -112,7 +112,7 @@ func StartCheckProxyAlive(checkURL string, checkURLwords string) {
 func checkAlive(checkURL string, checkURLwords string) {
 	proxies, err := QueryProxyURL()
 	if err != nil {
-		fmt.Printf("[!] query db error: %v\n", err)
+		ErrorLog(Warn("[!] query db error: %v", err))
 	}
 	for i := range proxies {
 		proxy := proxies[i]
@@ -123,7 +123,7 @@ func checkAlive(checkURL string, checkURLwords string) {
 					timeout, avail = CheckProxyWithCheckURL(proxy.URL, checkURL, checkURLwords)
 				}
 				if avail {
-					fmt.Printf("%v 可用\n", proxy.URL)
+					InfoLog(Notice("%v 可用", proxy.URL))
 					SetProxyURLAvail(proxy.URL, timeout, CanBypassGFW(respBody))
 					return
 				}
