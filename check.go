@@ -2,10 +2,6 @@ package rotateproxy
 
 import (
 	"crypto/tls"
-<<<<<<< HEAD
-=======
-	"fmt"
->>>>>>> 7e8cacba273ca6e9b5ed8167f8d9810248ff7b58
 	"io"
 	"net/http"
 	"net/url"
@@ -103,15 +99,9 @@ func StartCheckProxyAlive(checkURL string, checkURLwords string) {
 		for {
 			select {
 			case <-crawlDone:
-<<<<<<< HEAD
 				InfoLog(Noticeln("Checkings"))
 				checkAlive(checkURL, checkURLwords)
 				InfoLog(Noticeln("Check done"))
-=======
-				fmt.Println("Checking")
-				checkAlive(checkURL, checkURLwords)
-				fmt.Println("Check done")
->>>>>>> 7e8cacba273ca6e9b5ed8167f8d9810248ff7b58
 			case <-ticker.C:
 				checkAlive(checkURL, checkURLwords)
 			}
