@@ -61,7 +61,9 @@ func main() {
 	}
 
 	// print fofa query
-	rotateproxy.InfoLog(rotateproxy.Notice("You fofa query for rotateproxy is : %v", rule))
+	rotateproxy.InfoLog(rotateproxy.Info("You fofa query for rotateproxy is : %v", rule))
+	rotateproxy.InfoLog(rotateproxy.Info("Check Proxy URL: %v", checkURL))
+	rotateproxy.InfoLog(rotateproxy.Info("Check Proxy Words: %v", checkURLwords))
 
 	baseCfg.ListenAddr = strings.TrimSpace(baseCfg.ListenAddr)
 

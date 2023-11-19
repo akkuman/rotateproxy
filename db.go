@@ -3,6 +3,7 @@ package rotateproxy
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -85,8 +86,15 @@ func SetProxyURLAvail(url string, timeout int64, canBypassGFW bool) error {
 }
 
 func SetProxyURLUnavail(url string) error {
-	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 0, Available: false})
-	ErrorLog(Notice("Mark %v Unavailble! ", url))
+	if !strings.HasPrefix(url, "socks5://") {
+		url = "socks5://" + url
+	}
+
+	// 这个语句似乎并没有将代理设置成不可用。。。
+	// tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 1, Available: 0})
+
+	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Update("available", false)
+	ErrorLog(Warn("Mark %v Unavailble!", url))
 	return tx.Error
 }
 
@@ -95,7 +103,7 @@ func AddProxyURLRetry(url string) error {
 	return tx.Error
 }
 
-func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, markUnavail func(), err error) {
+func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, err error) {
 	var proxyURL ProxyURL
 	var tx *gorm.DB
 	if strategyFlag == 0 {
@@ -120,8 +128,5 @@ func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, markUnavail fu
 	}
 	pu = proxyURL.URL
 	err = tx.Error
-	markUnavail = func() {
-		SetProxyURLUnavail(proxyURL.URL)
-	}
-	return
+	return pu, err
 }

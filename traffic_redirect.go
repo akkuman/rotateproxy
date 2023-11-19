@@ -147,6 +147,7 @@ func NewNoAuthPreProcessor(cfg BaseConfig) *NoAuthPreProcessor {
 type RedirectClient struct {
 	config *BaseConfig
 
+	currentProxy string
 	preProcessor ConnPreProcessorIface
 }
 
@@ -193,19 +194,21 @@ func (c *RedirectClient) Serve() error {
 }
 
 // getValidSocks5Connection 获取可用的socks5连接并完成握手阶段
-func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
-	var cc net.Conn
+func (c *RedirectClient) getValidSocks5Connection() (cc net.Conn, err error) {
+	// var cc net.Conn
 	for {
-		key, markUnavail, err := RandomProxyURL(c.config.IPRegionFlag, c.config.SelectStrategy)
+		key, err := RandomProxyURL(c.config.IPRegionFlag, c.config.SelectStrategy)
 		if err != nil {
 			return nil, err
 		}
 		key = strings.TrimPrefix(key, "socks5://")
+		c.currentProxy = key
 		cc, err = net.DialTimeout("tcp", key, 5*time.Second)
 		if err != nil {
 			closeConn(cc)
-			markUnavail()
+			SetProxyURLUnavail(key)
 			ErrorLog(Warn("[!] cannot connect to %v", key))
+			return cc, err
 		}
 		InfoLog(Info("[*] use %v", key))
 		// write header for remote socks5 server
@@ -214,7 +217,7 @@ func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
 			closeConn(cc)
 			if errors.Is(err, ErrNotSocks5Proxy) {
 				// 将该代理设置为不可用
-				markUnavail()
+				SetProxyURLUnavail(c.currentProxy)
 				ErrorLog(Warn("Error : %v", err))
 				continue
 			}
@@ -237,12 +240,14 @@ func (c *RedirectClient) HandleConn(conn net.Conn) {
 	cc, err := c.getValidSocks5Connection()
 	if err != nil {
 		ErrorLog(Warn("[!] getValidSocks5Connection failed: %v", err))
+		SetProxyURLUnavail(c.currentProxy)
 		return
 	}
 	defer closeConn(cc)
 	err = transport(conn, cc)
 	if err != nil {
 		ErrorLog(Warn("[!] transport error: %v", err))
+		SetProxyURLUnavail(c.currentProxy)
 	}
 }
 
