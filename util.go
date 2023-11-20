@@ -2,11 +2,14 @@ package rotateproxy
 
 import (
 	"errors"
-	"fmt"
 	"io"
+	"log"
 	"math/rand"
+	"os"
 	"sync"
 	"time"
+
+	"github.com/fatih/color"
 )
 
 var errInvalidWrite = errors.New("invalid write result")
@@ -30,7 +33,7 @@ func RandomSyncMap(sMap sync.Map) (key, value interface{}) {
 func IsProxyURLBlank() bool {
 	proxies, err := QueryAvailProxyURL()
 	if err != nil {
-		fmt.Printf("[!] Error: %v\n", err)
+		ErrorLog(Warn("[!] Error: %v", err))
 		return false
 	}
 	return len(proxies) == 0
@@ -93,3 +96,15 @@ func CopyBufferWithCloseErr(dst io.Writer, src io.Reader, buf []byte) (written i
 	}
 	return written, err
 }
+
+var (
+	Notice   = color.New(color.FgBlue).SprintfFunc()
+	Noticeln = color.New(color.FgBlue).SprintFunc()
+	Info     = color.New(color.FgGreen).SprintfFunc()
+	Warn     = color.New(color.FgRed).SprintfFunc()
+)
+
+var (
+	InfoLog  = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile).Println
+	ErrorLog = log.New(os.Stdout, "", log.Ldate|log.Ltime|log.Lshortfile).Println
+)
