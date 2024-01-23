@@ -1,11 +1,14 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"regexp"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/akkuman/rotateproxy"
@@ -72,9 +75,22 @@ func main() {
 		baseCfg.ListenAddr = ":" + baseCfg.ListenAddr
 	}
 
-	rotateproxy.StartRunCrawler(token, email, rule, pageCount, proxy)
-	rotateproxy.StartCheckProxyAlive(checkURL, checkURLwords)
-	c := rotateproxy.NewRedirectClient(rotateproxy.WithConfig(&baseCfg))
-	c.Serve()
-	select {}
+	c := make(chan os.Signal)
+	// 监听信号
+	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
+
+	ctx := context.Background()
+	rotateproxy.StartRunCrawler(ctx, token, email, rule, pageCount, proxy)
+	rotateproxy.StartCheckProxyAlive(ctx, checkURL, checkURLwords)
+	go func() {
+		c := rotateproxy.NewRedirectClient(rotateproxy.WithConfig(&baseCfg))
+		c.Serve(ctx)
+	}()
+
+	<- c
+	err := rotateproxy.CloseDB()
+	if err != nil {
+		rotateproxy.ErrorLog(rotateproxy.Warn("Error closing db: %v", err))
+		os.Exit(1)
+	}
 }

@@ -174,7 +174,7 @@ func NewRedirectClient(opts ...RedirectClientOption) *RedirectClient {
 	return c
 }
 
-func (c *RedirectClient) Serve() error {
+func (c *RedirectClient) Serve(ctx context.Context) error {
 	l, err := net.Listen("tcp", c.config.ListenAddr)
 	if err != nil {
 		return err
@@ -184,12 +184,17 @@ func (c *RedirectClient) Serve() error {
 		time.Sleep(3 * time.Second)
 	}
 	for {
-		conn, err := l.Accept()
-		if err != nil {
-			ErrorLog(Warn("[!] accept error: %v", err))
-			continue
+		select {
+			case <- ctx.Done():
+				return nil
+			default:
+				conn, err := l.Accept()
+				if err != nil {
+					ErrorLog(Warn("[!] accept error: %v", err))
+					continue
+				}
+				go c.HandleConn(conn)
 		}
-		go c.HandleConn(conn)
 	}
 }
 

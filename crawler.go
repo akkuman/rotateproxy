@@ -1,6 +1,7 @@
 package rotateproxy
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -69,7 +70,7 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int, proxy string) (
 	return
 }
 
-func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int, proxy string) {
+func StartRunCrawler(ctx context.Context, fofaApiKey, fofaEmail, rule string, pageCount int, proxy string) {
 	runCrawlerFunc := func() {
 		for i := 1; i <= 3; i++ {
 			err := RunCrawler(fofaApiKey, fofaEmail, rule, i, proxy)
@@ -81,8 +82,15 @@ func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int, proxy st
 	go func() {
 		runCrawlerFunc()
 		ticker := time.NewTicker(600 * time.Second)
-		for range ticker.C {
-			runCrawlerFunc()
+		defer ticker.Stop()
+		for {
+			select {
+				case <- ticker.C:
+					runCrawlerFunc()
+				case <- ctx.Done():
+					return
+			}
+			
 		}
 	}()
 }

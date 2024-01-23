@@ -34,19 +34,26 @@ func checkErr(err error) {
 func init() {
 	var err error
 	// 启动前删除缓存数据库
-	if err = os.Remove("db.db"); err != nil {
-		if !os.IsNotExist(err) {
-			panic(err)
+	files := []string{
+		"db.db",
+		"db.db-shm",
+		"db.db-wal",
+	}
+	for _, f := range files {
+		if err = os.Remove(f); err != nil {
+			if !os.IsNotExist(err) {
+				panic(err)
+			}
 		}
 	}
+
 	// https://github.com/glebarez/sqlite/issues/52#issuecomment-1214160902
-	DB, err = gorm.Open(sqlite.Open("db.db?_pragma=journal_mode(WAL)"), &gorm.Config{
+	DB, err = gorm.Open(sqlite.Open("file:db.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)"), &gorm.Config{
 		Logger: logger.Discard,
 	})
 	checkErr(err)
 
 	DB.AutoMigrate(&ProxyURL{})
-
 }
 
 func CreateProxyURL(url string) error {
@@ -124,4 +131,15 @@ func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, err error) {
 	pu = proxyURL.URL
 	err = tx.Error
 	return pu, err
+}
+
+func CloseDB() error {
+	if DB == nil {
+		return fmt.Errorf("DB is nil")
+	}
+	db, err := DB.DB()
+	if err != nil {
+		return nil
+	}
+	return db.Close()
 }
