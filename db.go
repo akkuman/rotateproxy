@@ -39,6 +39,7 @@ func init() {
 			panic(err)
 		}
 	}
+	// https://github.com/glebarez/sqlite/issues/52#issuecomment-1214160902
 	DB, err = gorm.Open(sqlite.Open("db.db?_pragma=journal_mode(WAL)"), &gorm.Config{
 		Logger: logger.Discard,
 	})
