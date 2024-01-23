@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"strings"
+	"time"
 
 	"github.com/akkuman/rotateproxy"
 )
@@ -29,7 +30,7 @@ func init() {
 	flag.StringVar(&email, "email", "", "email address")
 	flag.StringVar(&token, "token", "", "token")
 	flag.StringVar(&proxy, "proxy", "", "proxy")
-	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2022-02-01" && country="CN"`, "search rule")
+	flag.StringVar(&rule, "rule", fmt.Sprintf(`protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="%s" && country="CN"`, time.Now().AddDate(0, -3, 0).Format(time.DateOnly)), "search rule")
 	flag.StringVar(&checkURL, "check", `https://www.google.com`, "check url")
 	flag.StringVar(&checkURLwords, "checkWords", `Copyright The Closure Library Authors`, "words in check url")
 	flag.IntVar(&baseCfg.IPRegionFlag, "region", 0, "0: all 1: cannot bypass gfw 2: bypass gfw")
