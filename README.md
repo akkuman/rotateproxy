@@ -40,7 +40,7 @@ Usage of rotateproxy.exe:
 
 ### 参数说明
 
-- `-check`，`-checkWords`: 如果你希望你找出来的代理能够访问某个特定网站，可以使用 `-check` 和 `-checkWords`，checkWords 为一串字符，用来保证确定是访问的该网站，比如 `-check "https://www.google.com" -checkWords "Copyright The Closure Library Authors"`，目的就是找出来的代理能够访问 https://www.google.com，并且返回内容中含有 `Copyright The Closure Library Authors`
+- `-check`，`-checkWords`: 如果你希望你找出来的代理能够访问某个特定网站，可以使用 `-check` 和 `-checkWords`，checkWords 为一串字符，用来保证确定是访问的该网站，比如 `-check "https://www.google.com" -checkWords "Copyright The Closure Library Authors"`，目的就是找出来的代理能够访问 [https://www.google.com](https://www.google.com)，并且返回内容中含有 `Copyright The Closure Library Authors`
 - `-email`，`-token`: fofa 的邮箱和 token
 - `-l`: 本服务的 socks5 监听地址
 - `-page`: fofa 结果默认爬取多少页（每页固定爬取 100 条）
