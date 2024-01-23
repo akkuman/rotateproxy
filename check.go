@@ -40,8 +40,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 	}
 	startTime := time.Now()
 
-	// http://cip.cc isn't stable enough for proxies alive test.
-	resp, err := httpclient.Get("https://www.baidu.com/robots.txt")
+	resp, err := httpclient.Get("https://searchplugin.csdn.net/api/v1/ip/get?ip=")
 	
 	if err != nil {
 		return "", 0, false
@@ -52,7 +51,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 	if err != nil {
 		return "", 0, false
 	}
-	if !strings.Contains(string(body), "Baiduspider-image") {
+	if !strings.Contains(string(body), `"address"`) {
 			return "", 0, false
 	}
 	return string(body), timeout, true
