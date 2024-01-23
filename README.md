@@ -72,6 +72,7 @@ curl -L -o /usr/lib/systemd/system/rotateproxy.service 'https://raw.githubuserco
 ```
 
 2. 查看 [rotateproxy.service.example](./rotateproxy.service.example) 文件示例，将 `/usr/lib/systemd/system/rotateproxy.service` 文件中的 `ExecStart` 的命令替换为你自己的命令
+
 3. 启动服务
 
 ```shell
@@ -88,17 +89,15 @@ systemctl enable rotateproxy.service
 4. 使用
 
 ```bash
-https_proxy=socks5://{ip}:{port} curl https://example.com
+curl --proxy "socks5://127.0.0.1:8899" https://example.com
 ```
 
 ## 效果展示
 
 ![](./pics/curl-run.jpg)
 
-## mac 交叉编译
+## 开发
 
-```bash
-brew install FiloSottile/musl-cross/musl-cross
-cd cmd/rotateproxy
-CC=x86_64-linux-musl-gcc CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -ldflags "-linkmode external -extldflags -static"
-```
+### 注意
+
+1. 该项目为了交叉编译方便，采用的 cgo-free 的 sqlite3 库，该库默认可能开启了 `SQLITE_FCNTL_PERSIST_WAL`，导致就算 Close 了数据库连接依旧不会删除 wal 文件，所以可能你会在 .db 旁边看到 -shm 和 -wal 文件，如果需要共享该数据库，请将这三个文件一并打包发送
