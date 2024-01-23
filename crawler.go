@@ -72,7 +72,7 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int, proxy string) (
 
 func StartRunCrawler(ctx context.Context, fofaApiKey, fofaEmail, rule string, pageCount int, proxy string) {
 	runCrawlerFunc := func() {
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= pageCount; i++ {
 			err := RunCrawler(fofaApiKey, fofaEmail, rule, i, proxy)
 			if err != nil {
 				ErrorLog(Warn("[!] error: %v", err))
