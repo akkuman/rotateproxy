@@ -39,16 +39,10 @@ func init() {
 			panic(err)
 		}
 	}
-	DB, err = gorm.Open(sqlite.Open("db.db"), &gorm.Config{
+	DB, err = gorm.Open(sqlite.Open("db.db?_pragma=journal_mode(WAL)"), &gorm.Config{
 		Logger: logger.Discard,
 	})
 	checkErr(err)
-
-	// According to https://github.com/mattn/go-sqlite3/issues/274#issuecomment-191597862,
-	// solve "database is locked" error using `db.SetMaxOpenConns(1)`
-	sqlDB, err := DB.DB()
-	checkErr(err)
-	sqlDB.SetMaxOpenConns(1)
 
 	DB.AutoMigrate(&ProxyURL{})
 
