@@ -1,6 +1,6 @@
 # rotateproxy
 
-利用fofa搜索socks5开放代理进行代理池轮切的工具
+利用 fofa 搜索 socks5 开放代理进行代理池轮切的工具
 
 ## 特性
 
@@ -31,12 +31,22 @@ Usage of rotateproxy.exe:
   -rule string
         search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2022-02-01\" && country=\"CN\"")
   -strategy int
-        0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ... (default 3)
+        0: random, 1: Select the one with the shortest timeout (default 1)
   -token string
         token
   -user string
         authentication username
 ```
+
+### 参数说明
+
+- `-check`，`-checkWords`: 如果你希望你找出来的代理能够访问某个特定网站，可以使用 `-check` 和 `-checkWords`，checkWords 为一串字符，用来保证确定是访问的该网站，比如 `-check "https://www.google.com" -checkWords "Copyright The Closure Library Authors"`，目的就是找出来的代理能够访问 https://www.google.com，并且返回内容中含有 `Copyright The Closure Library Authors`
+- `-email`，`-token`: fofa 的邮箱和 token
+- `-l`: 本服务的 socks5 监听地址
+- `-page`: fofa 结果默认爬取多少页（每页固定爬取 100 条）
+- `-user`，`-pass`: 本服务的 socks5 用户名密码认证
+- `-proxy`: 如果提供，将使用该 proxy 来访问 fofa 获取代理地址
+- `-region`: 用来筛选是否能访问谷歌
 
 ## 安装
 
@@ -51,7 +61,7 @@ curl -L -o rotateproxy 'https://github.com/akkuman/rotateproxy/releases/latest/d
 chmod +x ./rotateproxy
 ```
 
-### 安装为linux服务（感谢 [@Rvn0xsy](https://github.com/Rvn0xsy) 提供 [PR](https://github.com/akkuman/rotateproxy/pull/4)）
+### 安装为 linux 服务（感谢 [@Rvn0xsy](https://github.com/Rvn0xsy) 提供 [PR](https://github.com/akkuman/rotateproxy/pull/4)）
 
 1. 下载相关文件
 
