@@ -1,19 +1,34 @@
+before:
+  hooks:
+    - go mod tidy
 builds:
-  - skip: true
+- env: [CGO_ENABLED=0]
+  goos:
+    - linux
+    - windows
+    - darwin
+    - freebsd
+  goarch:
+    - amd64
+    - arm64
+  dir: .
+  main: ./cmd/rotateproxy
+  flags:
+    # trims path
+    - -trimpath
+  ldflags:
+    # use commit date instead of current date as main.date
+    # only needed if you actually use those things in your main package, otherwise can be ignored.
+    - -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{ .CommitDate }}
 checksum:
   name_template: 'checksums.txt'
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - '^docs:'
+      - '^test:'
 release:
-  # Same as for github
-  # Note: it can only be one: either github, gitlab or gitea
-  github:
-    owner: akkuman
-    name: rotateproxy
-
-  draft: false
-
-  # You can add extra pre-existing files to the release.
-  # The filename on the release will be the last part of the path (base). If
-  # another file with the same name exists, the latest one found will be used.
-  # Defaults to empty.
-  extra_files:
-    - glob: ./build/*
+  name_template: 'v{{ .Version }}'
+archives:
+  - format: zip
