@@ -48,7 +48,7 @@ func init() {
 	}
 
 	// https://github.com/glebarez/sqlite/issues/52#issuecomment-1214160902
-	DB, err = gorm.Open(sqlite.Open("file:db.db?_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)"), &gorm.Config{
+	DB, err = gorm.Open(sqlite.Open("file:db.db?cache=shared&_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)"), &gorm.Config{
 		Logger: logger.Discard,
 	})
 	checkErr(err)
@@ -139,7 +139,7 @@ func CloseDB() error {
 	}
 	db, err := DB.DB()
 	if err != nil {
-		return nil
+		return err
 	}
 	return db.Close()
 }
