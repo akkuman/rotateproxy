@@ -26,7 +26,7 @@ func init() {
 	flag.StringVar(&email, "email", "", "email address")
 	flag.StringVar(&token, "token", "", "token")
 	flag.StringVar(&proxy, "proxy", "", "proxy")
-	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2022-02-01" && country="CN"`, "search rule")
+	flag.StringVar(&rule, "rule", `protocol=="socks5" && "Version:5 Method:No Authentication(0x00)" && after="2025-03-01" && country="CN"`, "search rule")
 	flag.StringVar(&checkURL, "check", `https://www.google.com`, "check url")
 	flag.IntVar(&baseCfg.IPRegionFlag, "region", 0, "0: all 1: cannot bypass gfw 2: bypass gfw")
 	flag.IntVar(&baseCfg.SelectStrategy, "strategy", 3, "0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ...")

@@ -6,8 +6,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 	"time"
+
+	"github.com/tidwall/gjson"
 )
 
 type IPInfo struct {
@@ -38,7 +39,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 		Timeout: 20 * time.Second,
 	}
 	startTime := time.Now()
-	resp, err := httpclient.Get("http://cip.cc/")
+	resp, err := httpclient.Get("https://whois.pconline.com.cn/ipJson.jsp?json=true&ip=")
 	if err != nil {
 		return "", 0, false
 	}
@@ -48,7 +49,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 	if err != nil {
 		return "", 0, false
 	}
-	if !strings.Contains(string(body), "地址") {
+	if resp.StatusCode != 200 {
 		return "", 0, false
 	}
 	return string(body), timeout, true
@@ -122,7 +123,5 @@ func checkAlive(checkURL string) {
 }
 
 func CanBypassGFW(respBody string) bool {
-	return strings.Contains(respBody, "香港") ||
-		strings.Contains(respBody, "台湾") ||
-		strings.Contains(respBody, "澳门") || !strings.Contains(respBody, "中国")
+	return gjson.Get(respBody, "pro").String() == ""
 }

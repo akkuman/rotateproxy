@@ -23,7 +23,7 @@ Usage of rotateproxy.exe:
   -region int
         0: all 1: cannot bypass gfw 2: bypass gfw
   -rule string
-        search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2021-08-01\" && country=\"CN\"")
+        search rule (default "protocol==\"socks5\" && \"Version:5 Method:No Authentication(0x00)\" && after=\"2025-03-01\" && country=\"CN\"")
   -token string
         token
   -user string
