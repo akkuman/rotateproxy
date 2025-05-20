@@ -75,7 +75,7 @@ func main() {
 		baseCfg.ListenAddr = ":" + baseCfg.ListenAddr
 	}
 
-	c := make(chan os.Signal)
+	c := make(chan os.Signal, 1)
 	// 监听信号
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGINT, syscall.SIGTERM, syscall.SIGQUIT)
 
