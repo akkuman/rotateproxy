@@ -54,6 +54,9 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 	if resp.StatusCode != 200 {
 		return "", 0, false
 	}
+	if gjson.GetBytes(body, "ip").String() == "" {
+		return "", 0, false
+	}
 	return string(body), timeout, true
 }
 
