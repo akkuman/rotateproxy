@@ -3,6 +3,7 @@ package rotateproxy
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/glebarez/sqlite"
 	"gorm.io/gorm"
@@ -33,15 +34,25 @@ func checkErr(err error) {
 func init() {
 	var err error
 	// 启动前删除缓存数据库
-	if err = os.Remove("db.db"); err != nil {
-		if !os.IsNotExist(err) {
-			panic(err)
+	files := []string{
+		"db.db",
+		"db.db-shm",
+		"db.db-wal",
+	}
+	for _, f := range files {
+		if err = os.Remove(f); err != nil {
+			if !os.IsNotExist(err) {
+				panic(err)
+			}
 		}
 	}
-	DB, err = gorm.Open(sqlite.Open("db.db"), &gorm.Config{
+
+	// https://github.com/glebarez/sqlite/issues/52#issuecomment-1214160902
+	DB, err = gorm.Open(sqlite.Open("file:db.db?cache=shared&_pragma=journal_mode(WAL)&_pragma=busy_timeout(10000)"), &gorm.Config{
 		Logger: logger.Discard,
 	})
 	checkErr(err)
+
 	DB.AutoMigrate(&ProxyURL{})
 }
 
@@ -77,7 +88,15 @@ func SetProxyURLAvail(url string, timeout int64, canBypassGFW bool) error {
 }
 
 func SetProxyURLUnavail(url string) error {
-	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 0, Available: false})
+	if !strings.HasPrefix(url, "socks5://") {
+		url = "socks5://" + url
+	}
+
+	// 这个语句似乎并没有将代理设置成不可用。。。
+	// tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Updates(ProxyURL{Retry: 1, Available: 0})
+
+	tx := DB.Model(&ProxyURL{}).Where("url = ?", url).Update("available", false)
+	ErrorLog(Warn("Mark %v Unavailble!", url))
 	return tx.Error
 }
 
@@ -86,13 +105,14 @@ func AddProxyURLRetry(url string) error {
 	return tx.Error
 }
 
-func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, markUnavail func(), err error) {
+func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, err error) {
 	var proxyURL ProxyURL
 	var tx *gorm.DB
 	if strategyFlag == 0 {
 		switch regionFlag {
 		case 1:
 			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, false).Scan(&proxyURL)
+
 		case 2:
 			tx = DB.Raw(fmt.Sprintf("SELECT * FROM %s WHERE available = ? AND can_bypass_gfw = ? ORDER BY RANDOM() LIMIT 1;", proxyURL.TableName()), true, true).Scan(&proxyURL)
 		default:
@@ -110,8 +130,16 @@ func RandomProxyURL(regionFlag int, strategyFlag int) (pu string, markUnavail fu
 	}
 	pu = proxyURL.URL
 	err = tx.Error
-	markUnavail = func() {
-		SetProxyURLUnavail(proxyURL.URL)
+	return pu, err
+}
+
+func CloseDB() error {
+	if DB == nil {
+		return fmt.Errorf("DB is nil")
 	}
-	return
+	db, err := DB.DB()
+	if err != nil {
+		return err
+	}
+	return db.Close()
 }

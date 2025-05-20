@@ -1,11 +1,12 @@
 package rotateproxy
 
 import (
+	"context"
 	"crypto/tls"
-	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/tidwall/gjson"
@@ -36,7 +37,8 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 			TLSClientConfig:   &tls.Config{InsecureSkipVerify: true},
 			DisableKeepAlives: true,
 		},
-		Timeout: 20 * time.Second,
+		// shorter timeout for better proxies
+		Timeout: 5 * time.Second,
 	}
 	startTime := time.Now()
 	resp, err := httpclient.Get("https://whois.pconline.com.cn/ipJson.jsp?json=true&ip=")
@@ -45,7 +47,7 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 	}
 	defer resp.Body.Close()
 	timeout = int64(time.Since(startTime))
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return "", 0, false
 	}
@@ -55,8 +57,8 @@ func CheckProxyAlive(proxyURL string) (respBody string, timeout int64, avail boo
 	return string(body), timeout, true
 }
 
-func CheckProxyWithCheckURL(proxyURL string, checkURL string) (timeout int64, avail bool) {
-	fmt.Printf("check %s： %s\n", proxyURL, checkURL)
+func CheckProxyWithCheckURL(proxyURL string, checkURL string, checkURLwords string) (timeout int64, avail bool) {
+	// InfoLog(Notice("check %s： %s", proxyURL, checkURL))
 	proxy, _ := url.Parse(proxyURL)
 	httpclient := &http.Client{
 		Transport: &http.Transport{
@@ -73,35 +75,47 @@ func CheckProxyWithCheckURL(proxyURL string, checkURL string) (timeout int64, av
 	}
 	defer resp.Body.Close()
 	timeout = int64(time.Since(startTime))
+	body, err := io.ReadAll(resp.Body)
+
+	if err != nil {
+		return 0, false
+	}
 
 	// TODO: support regex
 	if resp.StatusCode != 200 {
 		return 0, false
 	}
 
+	if !strings.Contains(string(body), checkURLwords) {
+		return 0, false
+	}
+
 	return timeout, true
 }
 
-func StartCheckProxyAlive(checkURL string) {
+func StartCheckProxyAlive(ctx context.Context, checkURL string, checkURLwords string) {
 	go func() {
 		ticker := time.NewTicker(120 * time.Second)
+		defer ticker.Stop()
 		for {
 			select {
 			case <-crawlDone:
-				fmt.Println("Checking")
-				checkAlive(checkURL)
-				fmt.Println("Check done")
+				InfoLog(Noticeln("Checkings"))
+				checkAlive(checkURL, checkURLwords)
+				InfoLog(Noticeln("Check done"))
 			case <-ticker.C:
-				checkAlive(checkURL)
+				checkAlive(checkURL, checkURLwords)
+			case <- ctx.Done():
+				return
 			}
 		}
 	}()
 }
 
-func checkAlive(checkURL string) {
+func checkAlive(checkURL string, checkURLwords string) {
 	proxies, err := QueryProxyURL()
 	if err != nil {
-		fmt.Printf("[!] query db error: %v\n", err)
+		ErrorLog(Warn("[!] query db error: %v", err))
 	}
 	for i := range proxies {
 		proxy := proxies[i]
@@ -109,10 +123,10 @@ func checkAlive(checkURL string) {
 			respBody, timeout, avail := CheckProxyAlive(proxy.URL)
 			if avail {
 				if checkURL != "" {
-					timeout, avail = CheckProxyWithCheckURL(proxy.URL, checkURL)
+					timeout, avail = CheckProxyWithCheckURL(proxy.URL, checkURL, checkURLwords)
 				}
 				if avail {
-					fmt.Printf("%v 可用\n", proxy.URL)
+					InfoLog(Notice("%v 可用", proxy.URL))
 					SetProxyURLAvail(proxy.URL, timeout, CanBypassGFW(respBody))
 					return
 				}

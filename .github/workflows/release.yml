@@ -7,21 +7,22 @@ on:
 
 jobs:
   build-rotateproxy:
-    runs-on: ubuntu-18.04
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Setup Golang
-        uses: actions/setup-go@v2
+      - name: Set up Go
+        uses: actions/setup-go@v4
         with:
-          go-version: 1.17
+          go-version: 1.21
+          cache: true
 
       - name: Run GoReleaser
-        uses: goreleaser/goreleaser-action@v4
+        uses: goreleaser/goreleaser-action@v5
         with:
+          distribution: goreleaser
           version: latest
           args: release --clean
-          workdir: cmd/rotateproxy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

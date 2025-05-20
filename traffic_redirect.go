@@ -18,15 +18,15 @@ const (
 )
 
 var (
-	largeBufferSize = 32 * 1024 // 32KB large buffer
+	largeBufferSize   = 32 * 1024 // 32KB large buffer
 	ErrNotSocks5Proxy = errors.New("this is not a socks proxy server")
 )
 
 type BaseConfig struct {
-	ListenAddr   string
-	IPRegionFlag int // 0: all 1: cannot bypass gfw 2: bypass gfw
-	Username string
-	Password string
+	ListenAddr     string
+	IPRegionFlag   int // 0: all 1: cannot bypass gfw 2: bypass gfw
+	Username       string
+	Password       string
 	SelectStrategy int // 0: random, 1: Select the one with the shortest timeout, 2: Select the two with the shortest timeout, ...
 }
 
@@ -45,7 +45,6 @@ type AuthPreProcessor struct {
 type NoAuthPreProcessor struct {
 	cfg BaseConfig
 }
-
 
 // DownstreamPreProcess auth for socks5 server(local)
 func (p *AuthPreProcessor) DownstreamPreProcess(conn net.Conn) (err error) {
@@ -108,7 +107,7 @@ func (p *AuthPreProcessor) UpstreamPreProcess(conn net.Conn) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("%v", e)
-			fmt.Printf("close connection: %v\n", err)
+			ErrorLog(Warn("close connection: %v", err))
 		}
 	}()
 	if conn == nil {
@@ -145,10 +144,10 @@ func NewNoAuthPreProcessor(cfg BaseConfig) *NoAuthPreProcessor {
 	return &NoAuthPreProcessor{cfg: cfg}
 }
 
-
 type RedirectClient struct {
 	config *BaseConfig
 
+	currentProxy string
 	preProcessor ConnPreProcessorIface
 }
 
@@ -175,51 +174,59 @@ func NewRedirectClient(opts ...RedirectClientOption) *RedirectClient {
 	return c
 }
 
-func (c *RedirectClient) Serve() error {
+func (c *RedirectClient) Serve(ctx context.Context) error {
 	l, err := net.Listen("tcp", c.config.ListenAddr)
 	if err != nil {
 		return err
 	}
 	for IsProxyURLBlank() {
-		fmt.Println("[*] waiting for crawl proxy...")
+		InfoLog(Noticeln("[*] waiting for crawl proxy..."))
 		time.Sleep(3 * time.Second)
 	}
 	for {
-		conn, err := l.Accept()
-		if err != nil {
-			fmt.Printf("[!] accept error: %v\n", err)
-			continue
+		select {
+			case <- ctx.Done():
+				return nil
+			default:
+				conn, err := l.Accept()
+				if err != nil {
+					ErrorLog(Warn("[!] accept error: %v", err))
+					continue
+				}
+				go c.HandleConn(conn)
 		}
-		go c.HandleConn(conn)
 	}
 }
 
 // getValidSocks5Connection 获取可用的socks5连接并完成握手阶段
-func (c *RedirectClient) getValidSocks5Connection() (net.Conn, error) {
-	var cc net.Conn
+func (c *RedirectClient) getValidSocks5Connection() (cc net.Conn, err error) {
+	// var cc net.Conn
 	for {
-		key, markUnavail, err := RandomProxyURL(c.config.IPRegionFlag, c.config.SelectStrategy)
+		key, err := RandomProxyURL(c.config.IPRegionFlag, c.config.SelectStrategy)
 		if err != nil {
 			return nil, err
 		}
 		key = strings.TrimPrefix(key, "socks5://")
+		c.currentProxy = key
 		cc, err = net.DialTimeout("tcp", key, 5*time.Second)
 		if err != nil {
 			closeConn(cc)
-			fmt.Printf("[!] cannot connect to %v\n", key)
+			SetProxyURLUnavail(key)
+			ErrorLog(Warn("[!] cannot connect to %v", key))
+			return cc, err
 		}
-		fmt.Printf("[*] use %v\n", key)
+		InfoLog(Info("[*] use %v", key))
 		// write header for remote socks5 server
 		err = c.preProcessor.UpstreamPreProcess(cc)
 		if err != nil {
 			closeConn(cc)
 			if errors.Is(err, ErrNotSocks5Proxy) {
 				// 将该代理设置为不可用
-				markUnavail()
-				fmt.Println(err)
+				SetProxyURLUnavail(c.currentProxy)
+				ErrorLog(Warn("Error : %v", err))
 				continue
 			}
-			fmt.Printf("socks handshake with downstream failed: %v\n", err)
+			ErrorLog(Warn("socks handshake with downstream failed: %v", err))
 			continue
 		}
 		break
@@ -232,18 +239,20 @@ func (c *RedirectClient) HandleConn(conn net.Conn) {
 	// auth for local socks5 serer
 	err := c.preProcessor.DownstreamPreProcess(conn)
 	if err != nil {
-		fmt.Printf("[!] socks handshake with downstream failed: %v\n", err)
+		ErrorLog(Warn("[!] socks handshake with downstream failed: %v", err))
 		return
 	}
 	cc, err := c.getValidSocks5Connection()
 	if err != nil {
-		fmt.Printf("[!] getValidSocks5Connection failed: %v\n", err)
+		ErrorLog(Warn("[!] getValidSocks5Connection failed: %v", err))
+		SetProxyURLUnavail(c.currentProxy)
 		return
 	}
 	defer closeConn(cc)
 	err = transport(conn, cc)
 	if err != nil {
-		fmt.Printf("[!] transport error: %v\n", err)
+		ErrorLog(Warn("[!] transport error: %v", err))
+		SetProxyURLUnavail(c.currentProxy)
 	}
 }
 
@@ -251,7 +260,7 @@ func closeConn(conn net.Conn) (err error) {
 	defer func() {
 		if e := recover(); e != nil {
 			err = fmt.Errorf("%v", e)
-			fmt.Printf("[*] close connection: %v\n", err)
+			ErrorLog(Warn("[*] close connection: %v", err))
 		}
 	}()
 	err = conn.Close()
@@ -260,11 +269,11 @@ func closeConn(conn net.Conn) (err error) {
 
 func transport(rw1, rw2 io.ReadWriter) error {
 	g, _ := errgroup.WithContext(context.Background())
-	g.Go(func() error{
+	g.Go(func() error {
 		return copyBuffer(rw1, rw2)
 	})
 
-	g.Go(func() error{
+	g.Go(func() error {
 		return copyBuffer(rw2, rw1)
 	})
 	var err error

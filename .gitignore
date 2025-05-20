@@ -1,6 +1,9 @@
 *.exe
+*.exe~
 .history
 .vscode
 *.zip
-cmd/rotateproxy/db.db
 build
+*.ps1
+*.db
+cmd/rotateproxy/db.db*

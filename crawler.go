@@ -1,6 +1,7 @@
 package rotateproxy
 
 import (
+	"context"
 	"crypto/tls"
 	"encoding/base64"
 	"encoding/json"
@@ -53,14 +54,14 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int, proxy string) (
 	if err != nil {
 		return err
 	}
-	fmt.Printf("start to parse proxy url from response\n")
+	InfoLog(Noticeln("start to parse proxy url from response"))
 	defer resp.Body.Close()
 	var res fofaAPIResponse
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
 		return err
 	}
-	fmt.Printf("get %d host\n", len(res.Results))
+	InfoLog(Notice("get %d host", len(res.Results)))
 	for _, value := range res.Results {
 		host := value[0]
 		addProxyURL(fmt.Sprintf("socks5://%s", host))
@@ -69,20 +70,27 @@ func RunCrawler(fofaApiKey, fofaEmail, rule string, pageNum int, proxy string) (
 	return
 }
 
-func StartRunCrawler(fofaApiKey, fofaEmail, rule string, pageCount int, proxy string) {
+func StartRunCrawler(ctx context.Context, fofaApiKey, fofaEmail, rule string, pageCount int, proxy string) {
 	runCrawlerFunc := func() {
-		for i := 1; i <= 3; i++ {
+		for i := 1; i <= pageCount; i++ {
 			err := RunCrawler(fofaApiKey, fofaEmail, rule, i, proxy)
 			if err != nil {
-				fmt.Printf("[!] error: %v\n", err)
+				ErrorLog(Warn("[!] error: %v", err))
 			}
 		}
 	}
 	go func() {
 		runCrawlerFunc()
 		ticker := time.NewTicker(600 * time.Second)
-		for range ticker.C {
-			runCrawlerFunc()
+		defer ticker.Stop()
+		for {
+			select {
+				case <- ticker.C:
+					runCrawlerFunc()
+				case <- ctx.Done():
+					return
+			}
+			
 		}
 	}()
 }
